@@ -1,0 +1,96 @@
+#
+Palabra Reservada
+<
+Archivo Libreria
+>
+/
+/
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+/
+identificador
+Palabra Reservada
+Palabra Reservada
+(
+)
+{
+/
+/
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+Palabra Reservada
+identificador
+Palabra Reservada
+;
+Palabra Reservada
+identificador
+Palabra Reservada
+;
+/
+/
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+Palabra Reservada
+=
+numero_real
+;
+identificador
+Palabra Reservada
+=
+numero_real
+;
+/
+/
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+identificador
+Palabra Reservada
+(
+cadena
+,
+identificador
+Palabra Reservada
+)
+;
+Palabra Reservada
+(
+cadena
+,
+identificador
+Palabra Reservada
+)
+;
+/
+/
+identificador
+identificador
+%
+identificador
+identificador
+Palabra Reservada
+Palabra Reservada
+numero_entero
+;
+}
