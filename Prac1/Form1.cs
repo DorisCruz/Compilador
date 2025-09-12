@@ -15,12 +15,7 @@ namespace Prac1
     public partial class Form1 : Form
     {
         string elemento;
-        int contadorIdentificadores = 0;
-        int contadorReservadas = 0;
-        int contadorNumeros = 0;
-        int contadorSimbolos = 0;
-        int contadorCadenas = 0;
-        int contadorCaracteres = 0;
+        
         List<string> P_Reservadas = new List<string>() {
             "int", "float", "char", "double", "if", "else",
             "while", "for", "return", "void", "main",
