@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Xml.Linq;
+using System.Text.RegularExpressions;
 
 namespace Prac1
 {
@@ -21,14 +22,40 @@ namespace Prac1
             "while", "for", "return", "void", "main",
             "include", "printf", "scanf", "switch", "case"
         };
-
+        Dictionary<string, string> PalabrasReservadasEsp = new Dictionary<string, string>()
+        {
+           {"int","entero"},
+           {"float","flotante"},
+           {"char","caracter"},
+           {"double","doble"},
+           {"if","si"},
+           {"else","sino"},
+           {"while","mientras"},
+           {"for","para"},
+           {"return","retornar"},
+           {"void","vacio"},
+           {"main","principal"},
+           {"include","incluir"},
+           {"printf","imprimir"},
+           {"scanf","leer"},
+           {"switch","seleccionar"},
+           {"case","caso"}
+};
         public Form1()
         {
             InitializeComponent();
             compilarSolucionToolStripMenuItem.Enabled = false;
 
         }
-
+        private string TraducirCodigo(string codigo)
+        {
+            foreach (var palabra in PalabrasReservadasEsp)
+            {
+                string patron = $@"\b{Regex.Escape(palabra.Key)}\b"; 
+                codigo = Regex.Replace(codigo, patron, palabra.Value);
+            }
+            return codigo;
+        }
 
         private void nuevoToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -97,7 +124,6 @@ namespace Prac1
             }
             Form1.ActiveForm.Text = "Mi Compilador - " + archivo;
             compilarSolucionToolStripMenuItem.Enabled = true;
-            //habilita la opcion compilar cuando se carga un archivo.
         }
         private void guardar()
         {
@@ -126,22 +152,21 @@ namespace Prac1
 
         private char Tipo_caracter(int caracter)
         {
-            if (caracter >= 65 && caracter <= 90 || caracter >= 97 && caracter <= 122) { return 'l'; } //letra 
+            if (caracter >= 65 && caracter <= 90 || caracter >= 97 && caracter <= 122) { return 'l'; } 
             else
             {
-                if (caracter >= 48 && caracter <= 57) { return 'd'; } //digito 
+                if (caracter >= 48 && caracter <= 57) { return 'd'; } 
                 else
                 {
                     switch (caracter)
                     {
-                        case 10: return 'n'; //salto de linea
-                        case 34: return '"';//inicio de cadena
-                        case 39: return 'c';//inicio de caracter
-                        case 32: return 'e';//espacio
+                        case 10: return 'n'; 
+                        case 34: return '"';
+                        case 39: return 'c';
+                        case 32: return 'e';
 
-                        //programar para los casos que sean simbolos para regresar 's'
 
-                        default: return 's';//simbolo
+                        default: return 's';
                     }
                     ;
 
@@ -163,7 +188,7 @@ namespace Prac1
                 i_caracter == 123 ||
                 i_caracter == 124 ||
             i_caracter == 125
-            ) { elemento = elemento + (char)i_caracter + "\n"; } //simbolos validos 
+            ) { elemento = elemento + (char)i_caracter + "\n"; } 
             else { Error(i_caracter); }
         }
         private void Cadena()
@@ -180,7 +205,6 @@ namespace Prac1
         private void Caracter()
         {
             i_caracter = Leer.Read();
-            //programar para los casos donde el caracter se imprime  '\n','\r' etc.
             i_caracter = Leer.Read();
             if (i_caracter != 39) Error(39);
         }
@@ -236,21 +260,49 @@ namespace Prac1
             }
 
         }
+        private bool Comentario()
+        {
+            if (i_caracter != '/') return false;
+
+            i_caracter = Leer.Read();
+
+            if (i_caracter == '/')
+            {
+                while (i_caracter != '\n' && i_caracter != -1)
+                    i_caracter = Leer.Read();
+                return true;
+            }
+
+            if (i_caracter == '*')
+            {
+                bool finComentario = false;
+                while (!finComentario && i_caracter != -1)
+                {
+                    i_caracter = Leer.Read();
+                    if (i_caracter == '\n') Numero_linea++;
+
+                    if (i_caracter == '*')
+                    {
+                        i_caracter = Leer.Read();
+                        if (i_caracter == '/') finComentario = true;
+                    }
+                }
+
+                if (!finComentario) Error(i_caracter);
+                return true;
+            }
+
+            return false;
+        }
+
 
         private void compilarSolucionToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Rtbx_salida.Text = "";
+            Rtbx_salida.Text = ""; 
             guardar();
             elemento = "";
             N_error = 0;
             Numero_linea = 1;
-
-            int contadorIdentificadores = 0;
-            int contadorReservadas = 0;
-            int contadorNumeros = 0;
-            int contadorSimbolos = 0;
-            int contadorCadenas = 0;
-            int contadorCaracteres = 0;
 
             archivoback = archivo.Remove(archivo.Length - 1) + "back";
             Escribir = new StreamWriter(archivoback);
@@ -260,47 +312,36 @@ namespace Prac1
             do
             {
                 elemento = "";
+
+                while (Comentario()) { }
+
                 switch (Tipo_caracter(i_caracter))
                 {
                     case 'l':
                         Identificador();
-                        Escribir.Write(elemento);
-                        Rtbx_salida.AppendText(elemento);
-
-                        if (elemento.Contains("Palabra Reservada"))
-                            contadorReservadas++;
-                        else
-                            contadorIdentificadores++;
+                        Escribir.Write(elemento); 
                         break;
 
                     case 'd':
                         Numero();
                         Escribir.Write(elemento);
-                        Rtbx_salida.AppendText(elemento);
-                        contadorNumeros++;
                         break;
 
                     case 's':
                         Simbolo();
                         Escribir.Write(elemento);
-                        Rtbx_salida.AppendText(elemento);
-                        contadorSimbolos++;
                         i_caracter = Leer.Read();
                         break;
 
                     case '"':
                         Cadena();
                         Escribir.Write("cadena\n");
-                        Rtbx_salida.AppendText("cadena\n");
-                        contadorCadenas++;
                         i_caracter = Leer.Read();
                         break;
 
                     case 'c':
                         Caracter();
                         Escribir.Write("caracter\n");
-                        Rtbx_salida.AppendText("caracter\n");
-                        contadorCaracteres++;
                         i_caracter = Leer.Read();
                         break;
 
@@ -314,20 +355,13 @@ namespace Prac1
                         break;
 
                     default:
-                        Error(i_caracter);
+                        Error(i_caracter); 
                         break;
                 }
 
             } while (i_caracter != -1);
 
-            Rtbx_salida.AppendText("Palabras reservadas: " + contadorReservadas + "\n");
-            Rtbx_salida.AppendText("Identificadores: " + contadorIdentificadores + "\n");
-            Rtbx_salida.AppendText("Números: " + contadorNumeros + "\n");
-            Rtbx_salida.AppendText("Símbolos: " + contadorSimbolos + "\n");
-            Rtbx_salida.AppendText("Cadenas: " + contadorCadenas + "\n");
-            Rtbx_salida.AppendText("Caracteres: " + contadorCaracteres + "\n");
-            Rtbx_salida.AppendText("Errores: " + N_error + "\n");
-
+            Rtbx_salida.AppendText("Errores: " + N_error + "\n"); 
             Escribir.Close();
             Leer.Close();
         }
@@ -335,7 +369,39 @@ namespace Prac1
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
             compilarSolucionToolStripMenuItem.Enabled = true;
-            //habilita la opcion compilar cuando se realiza un cambio en el texto.
+        }
+
+        private void traducirToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(richTextBox1.Text))
+            {
+                string codigoTraducido = TraducirCodigo(richTextBox1.Text);
+               
+
+                if (archivo != null)
+                {
+                    string archivoTrad = archivo.Remove(archivo.Length - 1) + "trad";
+                    using (StreamWriter EscribirTrad = new StreamWriter(archivoTrad))
+                    {
+                        EscribirTrad.Write(codigoTraducido);
+                    }
+
+                    MessageBox.Show("Archivo traducido generado: " + archivoTrad);
+                }
+                else
+                {
+                    MessageBox.Show("Guarda primero tu archivo para crear la traducción.");
+                }
+            }
+            else
+            {
+                MessageBox.Show("No hay texto para traducir.");
+            }
+        }
+
+        private void analizarToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
         }
     }
     

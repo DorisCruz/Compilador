@@ -1,96 +1,59 @@
-#
-Palabra Reservada
-<
+Simbolo: #
+Identificador: include
+Simbolo: <
 Archivo Libreria
->
-/
-/
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-/
-identificador
-Palabra Reservada
-Palabra Reservada
-(
-)
-{
-/
-/
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-Palabra Reservada
-identificador
-Palabra Reservada
-;
-Palabra Reservada
-identificador
-Palabra Reservada
-;
-/
-/
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-Palabra Reservada
-=
+Simbolo: >
+Comentario de línea
+Palabra Reservada: int
+Palabra Reservada: main
+Simbolo: (
+Simbolo: )
+Simbolo: {
+Comentario de línea
+Palabra Reservada: float
+Identificador: numero
+Simbolo: _
+Palabra Reservada: float
+Simbolo: ;
+Palabra Reservada: double
+Identificador: numero
+Simbolo: _
+Palabra Reservada: double
+Simbolo: ;
+Comentario de línea
+Identificador: numero
+Simbolo: _
+Palabra Reservada: float
+Simbolo: =
 numero_real
-;
-identificador
-Palabra Reservada
-=
+Simbolo: ;
+Identificador: numero
+Simbolo: _
+Palabra Reservada: double
+Simbolo: =
 numero_real
-;
-/
-/
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-identificador
-Palabra Reservada
-(
+Simbolo: ;
+Comentario de línea
+Identificador: printf
+Simbolo: (
 cadena
-,
-identificador
-Palabra Reservada
-)
-;
-Palabra Reservada
-(
+Simbolo: ,
+Identificador: numero
+Simbolo: _
+Palabra Reservada: float
+Simbolo: )
+Simbolo: ;
+Identificador: printf
+Simbolo: (
 cadena
-,
-identificador
-Palabra Reservada
-)
-;
-/
-/
-identificador
-identificador
-%
-identificador
-identificador
-Palabra Reservada
-Palabra Reservada
+Simbolo: ,
+Identificador: numero
+Simbolo: _
+Palabra Reservada: double
+Simbolo: )
+Simbolo: ;
+Comentario de línea
+Palabra Reservada: return
 numero_entero
-;
-}
+Simbolo: ;
+Simbolo: }

@@ -43,6 +43,7 @@ namespace Prac1
             this.compilarSolucionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.Rtbx_salida = new System.Windows.Forms.RichTextBox();
+            this.traducirToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -51,7 +52,8 @@ namespace Prac1
             this.menuStrip1.BackColor = System.Drawing.SystemColors.GradientInactiveCaption;
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.archivoToolStripMenuItem,
-            this.compilarToolStripMenuItem});
+            this.compilarToolStripMenuItem,
+            this.traducirToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(800, 24);
@@ -117,8 +119,9 @@ namespace Prac1
             // analizarToolStripMenuItem
             // 
             this.analizarToolStripMenuItem.Name = "analizarToolStripMenuItem";
-            this.analizarToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.analizarToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.analizarToolStripMenuItem.Text = "Analizar";
+            this.analizarToolStripMenuItem.Click += new System.EventHandler(this.analizarToolStripMenuItem_Click);
             // 
             // compilarSolucionToolStripMenuItem
             // 
@@ -145,6 +148,13 @@ namespace Prac1
             this.Rtbx_salida.Size = new System.Drawing.Size(800, 114);
             this.Rtbx_salida.TabIndex = 2;
             this.Rtbx_salida.Text = "";
+            // 
+            // traducirToolStripMenuItem
+            // 
+            this.traducirToolStripMenuItem.Name = "traducirToolStripMenuItem";
+            this.traducirToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
+            this.traducirToolStripMenuItem.Text = "Traducir";
+            this.traducirToolStripMenuItem.Click += new System.EventHandler(this.traducirToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -178,6 +188,7 @@ namespace Prac1
         private System.Windows.Forms.ToolStripMenuItem analizarToolStripMenuItem;
         private System.Windows.Forms.RichTextBox Rtbx_salida;
         private System.Windows.Forms.ToolStripMenuItem compilarSolucionToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem traducirToolStripMenuItem;
     }
 }
 
