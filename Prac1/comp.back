@@ -1,59 +1,54 @@
 Simbolo: #
-Identificador: include
+Palabra Reservada
 Simbolo: <
 Archivo Libreria
 Simbolo: >
-Comentario de línea
-Palabra Reservada: int
-Palabra Reservada: main
+Palabra Reservada
+Palabra Reservada
 Simbolo: (
 Simbolo: )
 Simbolo: {
-Comentario de línea
-Palabra Reservada: float
-Identificador: numero
+Palabra Reservada
+identificador
 Simbolo: _
-Palabra Reservada: float
+Palabra Reservada
 Simbolo: ;
-Palabra Reservada: double
-Identificador: numero
+Palabra Reservada
+identificador
 Simbolo: _
-Palabra Reservada: double
+Palabra Reservada
 Simbolo: ;
-Comentario de línea
-Identificador: numero
+identificador
 Simbolo: _
-Palabra Reservada: float
+Palabra Reservada
 Simbolo: =
 numero_real
 Simbolo: ;
-Identificador: numero
+identificador
 Simbolo: _
-Palabra Reservada: double
+Palabra Reservada
 Simbolo: =
 numero_real
 Simbolo: ;
-Comentario de línea
-Identificador: printf
+Palabra Reservada
 Simbolo: (
 cadena
 Simbolo: ,
-Identificador: numero
+identificador
 Simbolo: _
-Palabra Reservada: float
+Palabra Reservada
 Simbolo: )
 Simbolo: ;
-Identificador: printf
+Palabra Reservada
 Simbolo: (
 cadena
 Simbolo: ,
-Identificador: numero
+identificador
 Simbolo: _
-Palabra Reservada: double
+Palabra Reservada
 Simbolo: )
 Simbolo: ;
-Comentario de línea
-Palabra Reservada: return
+Palabra Reservada
 numero_entero
 Simbolo: ;
 Simbolo: }

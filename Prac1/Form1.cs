@@ -177,19 +177,7 @@ namespace Prac1
 
         private void Simbolo()
         {
-            if (i_caracter == 33 ||
-                i_caracter >= 35 && i_caracter <= 38 ||
-                i_caracter >= 40 && i_caracter <= 45 ||
-                i_caracter == 47 ||
-                i_caracter >= 58 && i_caracter <= 62 ||
-                i_caracter == 91 ||
-                i_caracter == 93 ||
-                i_caracter == 94 ||
-                i_caracter == 123 ||
-                i_caracter == 124 ||
-            i_caracter == 125
-            ) { elemento = elemento + (char)i_caracter + "\n"; } 
-            else { Error(i_caracter); }
+            elemento = "Simbolo: " + (char)i_caracter + "\n";
         }
         private void Cadena()
         {
@@ -210,8 +198,9 @@ namespace Prac1
         }
         private void Error(int i_caracter)
         {
-            Rtbx_salida.AppendText("Error léxico " + (char)i_caracter + ", línea " + Numero_linea + "\n");
+            Rtbx_salida.AppendText("Error léxico: " + (char)i_caracter + " en línea " + Numero_linea + "\n");
             N_error++;
+            i_caracter = Leer.Read();
         }
         private void Archivo_Libreria()
         {
