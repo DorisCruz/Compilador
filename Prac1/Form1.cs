@@ -51,9 +51,11 @@ namespace Prac1
         {
             foreach (var palabra in PalabrasReservadasEsp)
             {
-                string patron = $@"\b{Regex.Escape(palabra.Key)}\b"; 
-                codigo = Regex.Replace(codigo, patron, palabra.Value);
+                string p = $@"\b{Regex.Escape(palabra.Key)}\b";
+
+                codigo = Regex.Replace(codigo, p, palabra.Value);
             }
+
             return codigo;
         }
 
@@ -284,6 +286,111 @@ namespace Prac1
             return false;
         }
 
+        private void VerificarDirectivaInclude()
+        {
+            if (archivo == null) return;
+
+            int lineaNum = 1;
+            Regex patronInclude = new Regex(@"^\s*#\s*include\s*(<[\w\.]+>|""[\w\.]+"")");
+
+            using (StreamReader sr = new StreamReader(archivo))
+            {
+                string linea;
+                while ((linea = sr.ReadLine()) != null)
+                {
+                    if (Regex.IsMatch(linea, @"^\s*#\s*include"))
+                    {
+                        if (patronInclude.IsMatch(linea))
+                        {
+                            Rtbx_salida.AppendText($"Directiva include válida en línea {lineaNum}: {linea}\n");
+                        }
+                        else
+                        {
+                            Rtbx_salida.AppendText($"Error en directiva include en línea {lineaNum}: {linea}\n");
+                            N_error++;
+                        }
+                    }
+                    lineaNum++;
+                }
+            }
+        }
+
+        private void Declaracion(string linea, int numLinea)
+        {
+            string[] tokens = linea.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (tokens.Length == 0) return;
+
+            string tipo = tokens[0];
+
+            if (tipo == "int" || tipo == "float" || tipo == "double" || tipo == "char")
+            {
+                if (linea.Contains("["))
+                {
+                    Declaracion_Arreglo(linea, numLinea);
+                }
+                else
+                {
+                    Declaracion_VariableGlobal(linea, numLinea);
+                }
+            }
+        }
+
+        private void Declaracion_VariableGlobal(string linea, int numLinea)
+        {
+            string patron = @"^(int|float|double|char)\s+[a-zA-Z_]\w*\s*;\s*$";
+
+            if (!Regex.IsMatch(linea, patron))
+            {
+                Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: {linea}\n");
+                N_error++;
+            }
+        }
+
+        private bool Constante(string valor)
+        {
+            return int.TryParse(valor, out int resultado) && resultado > 0;
+        }
+
+        private void Declaracion_Arreglo(string linea, int numLinea)
+        {
+            Match match = Regex.Match(linea, @"^(int|float|double|char)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+)\s*\]\s*;\s*$");
+
+            if (match.Success)
+            {
+                string valor = match.Groups[3].Value;
+
+                if (!Constante(valor))
+                {
+                    Rtbx_salida.AppendText($"Error en tamaño de arreglo en línea {numLinea}: {linea}\n");
+                    N_error++;
+                }
+            }
+            else
+            {
+                Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: {linea}\n");
+                N_error++;
+            }
+        }
+
+        private void VerificarDeclaraciones()
+        {
+            if (archivo == null) return;
+
+            int numLinea = 1;
+            using (StreamReader sr = new StreamReader(archivo))
+            {
+                string linea;
+                while ((linea = sr.ReadLine()) != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(linea))
+                    {
+                        Declaracion(linea.Trim(), numLinea);
+                    }
+                    numLinea++;
+                }
+            }
+        }
 
         private void compilarSolucionToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -390,7 +497,13 @@ namespace Prac1
 
         private void analizarToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            Rtbx_salida.Clear();
+            N_error = 0;
 
+            VerificarDirectivaInclude();
+            VerificarDeclaraciones();
+
+            Rtbx_salida.AppendText($"\nTotal de errores sintácticos: {N_error}\n");
         }
     }
     

@@ -1,0 +1,8 @@
+
+#incluir <stdio.h>
+
+entero principal()
+{
+@
+    retornar 0;
+}

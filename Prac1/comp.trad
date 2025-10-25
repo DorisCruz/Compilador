@@ -11,7 +11,7 @@ entero principal() {
 
     // Impresión de los valores en pantalla
     imprimir("Valor flotante: %f\n", numero_float);
-    imprimir("Valor doble: %lf\n", numero_double); // Se usa %lf para doble
+    imprimir("Valor doble: %lf\n", numero_doubble); // Se usa %lf para doble
 
     retornar 0;
 }

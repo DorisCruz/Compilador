@@ -11,7 +11,7 @@ int main() {
 
     // Impresión de los valores en pantalla
     printf("Valor float: %f\n", numero_float);
-    printf("Valor double: %lf\n", numero_double); // Se usa %lf para double
+    printf("Valor double: %lf\n", numero_doubble); // Se usa %lf para double
 
     return 0;
 }
