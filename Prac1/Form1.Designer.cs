@@ -40,10 +40,9 @@ namespace Prac1
             this.abrirToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.compilarToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.analizarToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.compilarSolucionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.traducirToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.Rtbx_salida = new System.Windows.Forms.RichTextBox();
-            this.traducirToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -110,8 +109,7 @@ namespace Prac1
             // compilarToolStripMenuItem
             // 
             this.compilarToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.analizarToolStripMenuItem,
-            this.compilarSolucionToolStripMenuItem});
+            this.analizarToolStripMenuItem});
             this.compilarToolStripMenuItem.Name = "compilarToolStripMenuItem";
             this.compilarToolStripMenuItem.Size = new System.Drawing.Size(68, 20);
             this.compilarToolStripMenuItem.Text = "Compilar";
@@ -123,12 +121,12 @@ namespace Prac1
             this.analizarToolStripMenuItem.Text = "Analizar";
             this.analizarToolStripMenuItem.Click += new System.EventHandler(this.analizarToolStripMenuItem_Click);
             // 
-            // compilarSolucionToolStripMenuItem
+            // traducirToolStripMenuItem
             // 
-            this.compilarSolucionToolStripMenuItem.Name = "compilarSolucionToolStripMenuItem";
-            this.compilarSolucionToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
-            this.compilarSolucionToolStripMenuItem.Text = "compilar solucion";
-            this.compilarSolucionToolStripMenuItem.Click += new System.EventHandler(this.compilarSolucionToolStripMenuItem_Click);
+            this.traducirToolStripMenuItem.Name = "traducirToolStripMenuItem";
+            this.traducirToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
+            this.traducirToolStripMenuItem.Text = "Traducir";
+            this.traducirToolStripMenuItem.Click += new System.EventHandler(this.traducirToolStripMenuItem_Click);
             // 
             // richTextBox1
             // 
@@ -148,13 +146,6 @@ namespace Prac1
             this.Rtbx_salida.Size = new System.Drawing.Size(800, 114);
             this.Rtbx_salida.TabIndex = 2;
             this.Rtbx_salida.Text = "";
-            // 
-            // traducirToolStripMenuItem
-            // 
-            this.traducirToolStripMenuItem.Name = "traducirToolStripMenuItem";
-            this.traducirToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
-            this.traducirToolStripMenuItem.Text = "Traducir";
-            this.traducirToolStripMenuItem.Click += new System.EventHandler(this.traducirToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -187,7 +178,6 @@ namespace Prac1
         private System.Windows.Forms.ToolStripMenuItem compilarToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem analizarToolStripMenuItem;
         private System.Windows.Forms.RichTextBox Rtbx_salida;
-        private System.Windows.Forms.ToolStripMenuItem compilarSolucionToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem traducirToolStripMenuItem;
     }
 }

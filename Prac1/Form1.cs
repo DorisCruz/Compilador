@@ -44,7 +44,6 @@ namespace Prac1
         public Form1()
         {
             InitializeComponent();
-            compilarSolucionToolStripMenuItem.Enabled = false;
 
         }
         private string TraducirCodigo(string codigo)
@@ -125,7 +124,6 @@ namespace Prac1
 
             }
             Form1.ActiveForm.Text = "Mi Compilador - " + archivo;
-            compilarSolucionToolStripMenuItem.Enabled = true;
         }
         private void guardar()
         {
@@ -291,25 +289,44 @@ namespace Prac1
             if (archivo == null) return;
 
             int lineaNum = 1;
-            Regex patronInclude = new Regex(@"^\s*#\s*include\s*(<[\w\.]+>|""[\w\.]+"")");
+            Regex patronInclude = new Regex(@"^\s*#\s*include\s*(<[^>]+>|""[^""]+"")\s*$");
+            Regex patronDirective = new Regex(@"^\s*#\s*(\w+)", RegexOptions.Compiled);
 
             using (StreamReader sr = new StreamReader(archivo))
             {
                 string linea;
                 while ((linea = sr.ReadLine()) != null)
                 {
-                    if (Regex.IsMatch(linea, @"^\s*#\s*include"))
+                    string lineaTrimStart = linea.TrimStart();
+
+                    if (lineaTrimStart.StartsWith("#"))
                     {
-                        if (patronInclude.IsMatch(linea))
+                        Match m = patronDirective.Match(lineaTrimStart);
+                        if (m.Success)
                         {
-                            Rtbx_salida.AppendText($"Directiva include válida en línea {lineaNum}: {linea}\n");
+                            string directiveName = m.Groups[1].Value; 
+
+                            if (directiveName == "include")
+                            {
+                                if (!patronInclude.IsMatch(lineaTrimStart))
+                                {
+                                    Rtbx_salida.AppendText($"Error en directiva include en línea {lineaNum}: {linea}\n");
+                                    N_error++;
+                                }
+                            }
+                            else
+                            {
+                                Rtbx_salida.AppendText($"Directiva desconocida o mal escrita en línea {lineaNum}: {linea}\n");
+                                N_error++;
+                            }
                         }
                         else
                         {
-                            Rtbx_salida.AppendText($"Error en directiva include en línea {lineaNum}: {linea}\n");
+                            Rtbx_salida.AppendText($"Error en directiva en línea {lineaNum}: {linea}\n");
                             N_error++;
                         }
                     }
+
                     lineaNum++;
                 }
             }
@@ -323,6 +340,9 @@ namespace Prac1
 
             string tipo = tokens[0];
 
+            if (tipo.StartsWith("#"))
+                return;
+
             if (tipo == "int" || tipo == "float" || tipo == "double" || tipo == "char")
             {
                 if (linea.Contains("["))
@@ -334,7 +354,13 @@ namespace Prac1
                     Declaracion_VariableGlobal(linea, numLinea);
                 }
             }
+            else
+            {
+                Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: tipo de dato desconocido '{tipo}'\n");
+                N_error++;
+            }
         }
+
 
         private void Declaracion_VariableGlobal(string linea, int numLinea)
         {
@@ -392,79 +418,10 @@ namespace Prac1
             }
         }
 
-        private void compilarSolucionToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Rtbx_salida.Text = ""; 
-            guardar();
-            elemento = "";
-            N_error = 0;
-            Numero_linea = 1;
-
-            archivoback = archivo.Remove(archivo.Length - 1) + "back";
-            Escribir = new StreamWriter(archivoback);
-            Leer = new StreamReader(archivo);
-
-            i_caracter = Leer.Read();
-            do
-            {
-                elemento = "";
-
-                while (Comentario()) { }
-
-                switch (Tipo_caracter(i_caracter))
-                {
-                    case 'l':
-                        Identificador();
-                        Escribir.Write(elemento); 
-                        break;
-
-                    case 'd':
-                        Numero();
-                        Escribir.Write(elemento);
-                        break;
-
-                    case 's':
-                        Simbolo();
-                        Escribir.Write(elemento);
-                        i_caracter = Leer.Read();
-                        break;
-
-                    case '"':
-                        Cadena();
-                        Escribir.Write("cadena\n");
-                        i_caracter = Leer.Read();
-                        break;
-
-                    case 'c':
-                        Caracter();
-                        Escribir.Write("caracter\n");
-                        i_caracter = Leer.Read();
-                        break;
-
-                    case 'n':
-                        i_caracter = Leer.Read();
-                        Numero_linea++;
-                        break;
-
-                    case 'e':
-                        i_caracter = Leer.Read();
-                        break;
-
-                    default:
-                        Error(i_caracter); 
-                        break;
-                }
-
-            } while (i_caracter != -1);
-
-            Rtbx_salida.AppendText("Errores: " + N_error + "\n"); 
-            Escribir.Close();
-            Leer.Close();
-        }
+     
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
-            compilarSolucionToolStripMenuItem.Enabled = true;
         }
 
         private void traducirToolStripMenuItem_Click(object sender, EventArgs e)
@@ -495,15 +452,52 @@ namespace Prac1
             }
         }
 
+        private void AnalisisLexico()
+        {
+            elemento = "";
+            Numero_linea = 1;
+            int erroresLexicos = 0;
+
+            archivoback = archivo.Remove(archivo.Length - 1) + "back";
+            Escribir = new StreamWriter(archivoback);
+            Leer = new StreamReader(archivo);
+
+            Regex simbolosInvalidos = new Regex(@"[^a-zA-Z0-9_{}\[\]\(\);\#\""<>\+\-\*/=%\s,\.]");
+
+            string linea;
+            while ((linea = Leer.ReadLine()) != null)
+            {
+                Match match = simbolosInvalidos.Match(linea);
+                if (match.Success)
+                {
+                    Rtbx_salida.AppendText($"Error léxico en línea {Numero_linea}: carácter no válido '{match.Value}'\n");
+                    erroresLexicos++;
+                }
+
+                Numero_linea++;
+            }
+
+            Escribir.Close();
+            Leer.Close();
+
+            Rtbx_salida.AppendText($"Errores léxicos: {erroresLexicos}\n");
+            N_error += erroresLexicos;
+        }
+
+
+
         private void analizarToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Rtbx_salida.Clear();
             N_error = 0;
+            guardar();
+
+            AnalisisLexico();
 
             VerificarDirectivaInclude();
             VerificarDeclaraciones();
 
-            Rtbx_salida.AppendText($"\nTotal de errores sintácticos: {N_error}\n");
+            Rtbx_salida.AppendText($"\nTotal de errores sintácticos y léxicos: {N_error}\n");
         }
     }
     

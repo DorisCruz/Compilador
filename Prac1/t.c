@@ -1,10 +1,10 @@
-#include <stdio.h>
+#inc\lude <stdio.h>
 #include "archivo.h"
 #include <stdio.h>
 int contador;
 float promedio;
 char letra;
 int numeros[10];
-float valores[0];
-int 9 dato;
+float valores[10];
+int dato;
 char texto[10];
