@@ -1,7 +1,5 @@
 Simbolo: #
-identificador
-Simbolo: \
-identificador
+Palabra Reservada
 Simbolo: <
 Archivo Libreria
 Simbolo: >
@@ -10,15 +8,14 @@ Simbolo: #
 Palabra Reservada
 cadena
 SL
+SL
 Simbolo: #
 Palabra Reservada
 Simbolo: <
 Archivo Libreria
 Simbolo: >
 SL
-Palabra Reservada
-identificador
-Simbolo: ;
+Simbolo: @
 SL
 Palabra Reservada
 identificador
@@ -26,13 +23,9 @@ Simbolo: ;
 SL
 Palabra Reservada
 identificador
-Simbolo: ;
-SL
-Palabra Reservada
-identificador
-Simbolo: [
-numero_entero
-Simbolo: ]
+Simbolo: =
+Simbolo: -
+numero_real
 Simbolo: ;
 SL
 Palabra Reservada
@@ -40,15 +33,38 @@ identificador
 Simbolo: [
 numero_entero
 Simbolo: ]
-Simbolo: ;
-SL
-identificador
-identificador
-Simbolo: ;
-SL
-Palabra Reservada
-identificador
 Simbolo: [
 numero_entero
 Simbolo: ]
+Simbolo: =
+Simbolo: {
+Simbolo: {
+numero_entero
+Simbolo: ,
+numero_entero
+Simbolo: ,
+numero_entero
+Simbolo: }
+Simbolo: ,
+Simbolo: {
+numero_entero
+Simbolo: ,
+numero_entero
+Simbolo: ,
+numero_entero
+Simbolo: }
+Simbolo: ,
+Simbolo: {
+numero_entero
+Simbolo: ,
+numero_entero
+Simbolo: ,
+numero_entero
+Simbolo: }
+Simbolo: }
+Simbolo: ;
+SL
+SL
+Palabra Reservada
+Palabra Reservada
 Simbolo: ;

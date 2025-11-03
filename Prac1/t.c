@@ -6,5 +6,5 @@ float promedio;
 char letra;
 int numeros[10];
 float valores[10];
-int dato;
+inttt dato;
 char texto[10];

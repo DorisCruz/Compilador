@@ -364,11 +364,19 @@ namespace Prac1
 
         private void Declaracion_VariableGlobal(string linea, int numLinea)
         {
-            string patron = @"^(int|float|double|char)\s+[a-zA-Z_]\w*\s*;\s*$";
+            string patron = @"^(int|float|double|char)\s+[a-zA-Z_]\w*\s*(=\s*[-+]?[0-9]*\.?[0-9]+)?\s*;\s*$";
 
             if (!Regex.IsMatch(linea, patron))
             {
-                Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: {linea}\n");
+                if (!linea.TrimEnd().EndsWith(";"))
+                {
+                    Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: falta ';' al final");
+                }
+                else
+                {
+                    Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: {linea}\n");
+                }
+
                 N_error++;
             }
         }
@@ -380,16 +388,21 @@ namespace Prac1
 
         private void Declaracion_Arreglo(string linea, int numLinea)
         {
-            Match match = Regex.Match(linea, @"^(int|float|double|char)\s+([a-zA-Z_]\w*)\s*\[\s*(\d+)\s*\]\s*;\s*$");
+            Match match = Regex.Match(linea,
+                @"^(int|float|double|char)\s+[a-zA-Z_]\w*\s*(\[\s*\d+\s*\])+\s*(=\s*\{.*\})?\s*;\s*$");
 
             if (match.Success)
             {
-                string valor = match.Groups[3].Value;
-
-                if (!Constante(valor))
+                var tamanos = Regex.Matches(linea, @"\[\s*(\d+)\s*\]");
+                foreach (Match t in tamanos)
                 {
-                    Rtbx_salida.AppendText($"Error en tamaño de arreglo en línea {numLinea}: {linea}\n");
-                    N_error++;
+                    int valor = int.Parse(t.Groups[1].Value);
+                    if (valor <= 0)
+                    {
+                        Rtbx_salida.AppendText($"Error en tamaño de arreglo en línea {numLinea}: {linea}\n");
+                        N_error++;
+                        return;
+                    }
                 }
             }
             else
@@ -462,20 +475,61 @@ namespace Prac1
             Escribir = new StreamWriter(archivoback);
             Leer = new StreamReader(archivo);
 
-            Regex simbolosInvalidos = new Regex(@"[^a-zA-Z0-9_{}\[\]\(\);\#\""<>\+\-\*/=%\s,\.]");
+            i_caracter = Leer.Read();
 
-            string linea;
-            while ((linea = Leer.ReadLine()) != null)
+            do
             {
-                Match match = simbolosInvalidos.Match(linea);
-                if (match.Success)
+                elemento = "";
+
+                while (Comentario()) { }
+
+                switch (Tipo_caracter(i_caracter))
                 {
-                    Rtbx_salida.AppendText($"Error léxico en línea {Numero_linea}: carácter no válido '{match.Value}'\n");
-                    erroresLexicos++;
+                    case 'l': 
+                        Identificador();
+                        Escribir.Write(elemento);
+                        break;
+
+                    case 'd': 
+                        Numero();
+                        Escribir.Write(elemento);
+                        break;
+
+                    case 's':
+                        Simbolo();
+                        Escribir.Write(elemento);
+                        i_caracter = Leer.Read();
+                        break;
+
+                    case '"': 
+                        Cadena();
+                        Escribir.Write("cadena\n");
+                        i_caracter = Leer.Read();
+                        break;
+
+                    case 'c': 
+                        Caracter();
+                        Escribir.Write("caracter\n");
+                        i_caracter = Leer.Read();
+                        break;
+
+                    case 'n': 
+                        Escribir.Write("SL\n");
+                        i_caracter = Leer.Read();
+                        Numero_linea++;
+                        break;
+
+                    case 'e': 
+                        i_caracter = Leer.Read();
+                        break;
+
+                    default:
+                        Error(i_caracter);
+                        erroresLexicos++;
+                        break;
                 }
 
-                Numero_linea++;
-            }
+            } while (i_caracter != -1);
 
             Escribir.Close();
             Leer.Close();
@@ -483,8 +537,6 @@ namespace Prac1
             Rtbx_salida.AppendText($"Errores léxicos: {erroresLexicos}\n");
             N_error += erroresLexicos;
         }
-
-
 
         private void analizarToolStripMenuItem_Click(object sender, EventArgs e)
         {
