@@ -177,25 +177,47 @@ namespace Prac1
 
         private void Simbolo()
         {
-            elemento = "Simbolo: " + (char)i_caracter + "\n";
+            elemento = ((char)i_caracter).ToString();
         }
         private void Cadena()
         {
-            do
-            {
-                i_caracter = Leer.Read();
-                if (i_caracter == 10) Numero_linea++;
+            string token = "\"";
+            i_caracter = Leer.Read();
 
-            } while (i_caracter != 34 && i_caracter != -1);
-            if (i_caracter == -1) Error(-1);
+            while (i_caracter != 34 && i_caracter != -1)
+            {
+                token += (char)i_caracter;
+                i_caracter = Leer.Read();
+            }
+
+            token += "\"";
+            elemento = token;
         }
+
 
         private void Caracter()
         {
+            string token = "'";
             i_caracter = Leer.Read();
-            i_caracter = Leer.Read();
-            if (i_caracter != 39) Error(39);
+
+            if (i_caracter != -1 && i_caracter != '\'')
+            {
+                token += (char)i_caracter;
+                i_caracter = Leer.Read();
+            }
+
+            if (i_caracter == 39)
+            {
+                token += "'";
+            }
+            else
+            {
+                Error(39);
+            }
+
+            elemento = token;
         }
+
         private void Error(int i_caracter)
         {
             Rtbx_salida.AppendText("Error léxico: " + (char)i_caracter + " en línea " + Numero_linea + "\n");
@@ -215,19 +237,19 @@ namespace Prac1
         }
         private void Identificador()
         {
+            string token = "";
+
+            // leer todas las letras o dígitos que forman el identificador
             do
             {
-                elemento = elemento + (char)i_caracter;
+                token += (char)i_caracter;
                 i_caracter = Leer.Read();
             } while (Tipo_caracter(i_caracter) == 'l' || Tipo_caracter(i_caracter) == 'd');
-            if ((char)i_caracter == '.') { Archivo_Libreria(); }
-            else
-            {
-                if (Palabra_Reservada()) elemento = "Palabra Reservada\n";
-                else elemento = "identificador\n";
-            }
 
+            // si es palabra reservada, igual se escribe tal cual (ej: int)
+            elemento = token;
         }
+
         private void Numero_Real()
         {
             do
@@ -238,17 +260,29 @@ namespace Prac1
         }
         private void Numero()
         {
+            string token = "";
+
             do
             {
+                token += (char)i_caracter;
                 i_caracter = Leer.Read();
             } while (Tipo_caracter(i_caracter) == 'd');
-            if ((char)i_caracter == '.') { Numero_Real(); }
-            else
+
+            if ((char)i_caracter == '.')
             {
-                elemento = "numero_entero\n";
+                token += (char)i_caracter;
+                i_caracter = Leer.Read();
+
+                while (Tipo_caracter(i_caracter) == 'd')
+                {
+                    token += (char)i_caracter;
+                    i_caracter = Leer.Read();
+                }
             }
 
+            elemento = token;
         }
+
         private bool Comentario()
         {
             if (i_caracter != '/') return false;
@@ -389,25 +423,58 @@ namespace Prac1
         private void Declaracion_Arreglo(string linea, int numLinea)
         {
             Match match = Regex.Match(linea,
-                @"^(int|float|double|char)\s+[a-zA-Z_]\w*\s*(\[\s*\d+\s*\])+\s*(=\s*\{.*\})?\s*;\s*$");
+                @"^(int|float|double|char)\s+[a-zA-Z_]\w*\s*(\[\s*\d+\s*\])+\s*=\s*\{.*\}\s*;\s*$");
 
             if (match.Success)
             {
-                var tamanos = Regex.Matches(linea, @"\[\s*(\d+)\s*\]");
-                foreach (Match t in tamanos)
+                string contenido = linea.Substring(linea.IndexOf('=') + 1);
+
+                int abre = contenido.Count(c => c == '{');
+                int cierra = contenido.Count(c => c == '}');
+                if (abre != cierra)
                 {
-                    int valor = int.Parse(t.Groups[1].Value);
-                    if (valor <= 0)
+                    Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: llaves faltantes - {linea}\n");
+                    N_error++;
+                    return;
+                }
+
+                if (Regex.IsMatch(contenido, @"\}\s*\{"))
+                {
+                    Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: falta coma entre grupos - {linea}\n");
+                    N_error++;
+                    return;
+                }
+
+                string[] grupos = Regex.Split(contenido, @"\},\s*\{");
+                foreach (string grupo in grupos)
+                {
+                    string limpio = grupo.Replace("{", "").Replace("}", "").Trim();
+
+                    if (Regex.IsMatch(limpio, @"\d+\s+\d+"))
                     {
-                        Rtbx_salida.AppendText($"Error en tamaño de arreglo en línea {numLinea}: {linea}\n");
+                        Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: falta coma entre valores - {linea}\n");
+                        N_error++;
+                        return;
+                    }
+
+                    string[] elementos = limpio.Split(',');
+                    if (elementos.Any(e => string.IsNullOrWhiteSpace(e)))
+                    {
+                        Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: coma faltante o valor vacío {linea}\n");
                         N_error++;
                         return;
                     }
                 }
+
+                if (!linea.TrimEnd().EndsWith(";"))
+                {
+                    Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: falta ';' al final - {linea}\n");
+                    N_error++;
+                }
             }
             else
             {
-                Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: {linea}\n");
+                Rtbx_salida.AppendText($"Error sintáctico en línea {numLinea}: formato inválido de arreglo → {linea}\n");
                 N_error++;
             }
         }
@@ -422,16 +489,22 @@ namespace Prac1
                 string linea;
                 while ((linea = sr.ReadLine()) != null)
                 {
-                    if (!string.IsNullOrWhiteSpace(linea))
+                    string trimmed = linea.TrimStart();
+                    if (string.IsNullOrWhiteSpace(trimmed) ||
+                        trimmed.StartsWith("//") ||
+                        trimmed.StartsWith("/*") ||
+                        trimmed.StartsWith("*") ||
+                        trimmed.StartsWith("*/"))
                     {
-                        Declaracion(linea.Trim(), numLinea);
+                        numLinea++;
+                        continue;
                     }
+
+                    Declaracion(linea.Trim(), numLinea);
                     numLinea++;
                 }
             }
         }
-
-     
 
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
@@ -475,61 +548,59 @@ namespace Prac1
             Escribir = new StreamWriter(archivoback);
             Leer = new StreamReader(archivo);
 
-            i_caracter = Leer.Read();
+            Regex tokenRegex = new Regex(@"#|include|<[^>]+>|""[^""]+""|[a-zA-Z_]\w*|\d+|[{}()\[\];,+\-*/=%<>]|//.*|/\*.*?\*/",
+                RegexOptions.Compiled | RegexOptions.Singleline);
 
-            do
+            Regex simbolosInvalidos = new Regex(@"[^a-zA-Z0-9_{}\[\]\(\);\#\""<>\+\-\*/=%\s,\.]");
+
+            Regex includeValido = new Regex(@"#\s*include\s*(<\w+\.h>|""\w+\.h"")");
+
+            string linea;
+            while ((linea = Leer.ReadLine()) != null)
             {
-                elemento = "";
-
-                while (Comentario()) { }
-
-                switch (Tipo_caracter(i_caracter))
+                if (string.IsNullOrWhiteSpace(linea))
                 {
-                    case 'l': 
-                        Identificador();
-                        Escribir.Write(elemento);
-                        break;
+                    Escribir.WriteLine("SL"); 
+                }
+                else
+                {
+                    string trimmed = linea.TrimStart();
 
-                    case 'd': 
-                        Numero();
-                        Escribir.Write(elemento);
-                        break;
+                    if (trimmed.StartsWith("#include"))
+                    {
+                        if (!includeValido.IsMatch(trimmed))
+                        {
+                            Rtbx_salida.AppendText($"Error léxico en línea {Numero_linea}: librería mal escrita - {linea}\n");
+                            erroresLexicos++;
+                        }
 
-                    case 's':
-                        Simbolo();
-                        Escribir.Write(elemento);
-                        i_caracter = Leer.Read();
-                        break;
+                        linea = Regex.Replace(linea, @"<[^>]+>|""[^""]+""", "libreria");
+                    }
 
-                    case '"': 
-                        Cadena();
-                        Escribir.Write("cadena\n");
-                        i_caracter = Leer.Read();
-                        break;
+                    MatchCollection tokens = tokenRegex.Matches(linea);
+                    foreach (Match token in tokens)
+                    {
+                        string valor = token.Value.Trim();
 
-                    case 'c': 
-                        Caracter();
-                        Escribir.Write("caracter\n");
-                        i_caracter = Leer.Read();
-                        break;
+                        if (string.IsNullOrWhiteSpace(valor))
+                            continue;
 
-                    case 'n': 
-                        Escribir.Write("SL\n");
-                        i_caracter = Leer.Read();
-                        Numero_linea++;
-                        break;
+                        Escribir.WriteLine(valor);
+                    }
 
-                    case 'e': 
-                        i_caracter = Leer.Read();
-                        break;
-
-                    default:
-                        Error(i_caracter);
-                        erroresLexicos++;
-                        break;
+                    if (!trimmed.StartsWith("//") && !trimmed.Contains("/*"))
+                    {
+                        Match match = simbolosInvalidos.Match(linea);
+                        if (match.Success)
+                        {
+                            Rtbx_salida.AppendText($"Error léxico en línea {Numero_linea}: carácter no válido '{match.Value}'\n");
+                            erroresLexicos++;
+                        }
+                    }
                 }
 
-            } while (i_caracter != -1);
+                Numero_linea++;
+            }
 
             Escribir.Close();
             Leer.Close();
@@ -537,6 +608,7 @@ namespace Prac1
             Rtbx_salida.AppendText($"Errores léxicos: {erroresLexicos}\n");
             N_error += erroresLexicos;
         }
+
 
         private void analizarToolStripMenuItem_Click(object sender, EventArgs e)
         {
