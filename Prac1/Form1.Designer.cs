@@ -4,12 +4,9 @@ namespace Prac1
     partial class Form1
     {
         private System.ComponentModel.IContainer components = null;
-        StreamWriter Escribir;
-        StreamReader Leer;
-        string archivo, archivoback;
-        int i_caracter, N_error;
+
+     
         char c_caracter;
-        int Numero_linea;
         /// <summary>
         /// Limpiar los recursos que se estén usando.
         /// </summary>

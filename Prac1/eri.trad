@@ -1,0 +1,22 @@
+#include <stdio.h>
+
+int  x  = 10 ;
+
+int  principal (){
+  int  y  = 5 ;
+
+  si  (condicion )
+  {
+       imprimir ("Es verdadero");
+  }
+
+  para  (int  i  = 0 ; i  < 10 ; i ++)
+  
+      imprimir ("Ciclo for");
+  }
+
+  mientras  (condicion )
+  {
+     imprimir ("Ciclo while");
+  }
+}

@@ -1,0 +1,31 @@
+#include <stdio.h>
+
+int  x  = 0 ;
+float  y  = 2 .5 ;
+
+si  condicion ) {
+}
+
+sino  {
+}
+
+selección  (condicion ) {
+    caso  1 :
+    romper ;
+    defecto :
+    romper ;
+}
+
+para  (condicion ) {
+}
+
+mientras  (condicion ) {
+}
+
+
+} mientras  (
+hacer  {
+    y  = y  - 1 ;
+} mientras  (condicion );
+
+retornar  0 ;
