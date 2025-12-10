@@ -1,78 +1,34 @@
-#
-include
-libreria
-SL
-int
-x
-=
-0
-;
-float
-y
-=
-2
-5
-;
-SL
-if
-condicion
-)
-{
+#include <stdio.h>
+
+int x = 0;
+float y = 2.5;
+
+if (condicion) {
 }
-SL
-else
-{
+
+else {
 }
-SL
-switch
-(
-condicion
-)
-{
-case
-1
-break
-;
-default
-break
-;
+
+switch (condicion) {
+    case 1
+    break;
+    default:
+    break;
 }
-/
-/
-lklkoli
-for
-(
-condicion
-)
-{
+/*
+fr (inicializacion; condicion; incremento) {
 }
-SL
-while
-(
-condicion
-)
-{
-}
-SL
-SL
-}
-while
-(
-do
-{
-y
-=
-y
--
-1
-;
-}
-while
-(
-condicion
-)
-;
-SL
-return
-0
-;
+
+do{
+  console.WriteLine(x);
+} while (condicion);
+*/
+
+
+
+} while (
+do {
+    y = y - 1;
+} while (condicion);
+
+return 0;

@@ -3,24 +3,27 @@
 int x = 0;
 float y = 2.5;
 
-if condicion) {
+if (condicion) {
 }
 
 else {
 }
 
 switch (condicion) {
-    case 1:
+    case 1
     break;
     default:
     break;
 }
-//lklkoli
-for (condicion) {
+/*
+fr (inicializacion; condicion; incremento) {
 }
 
-while (condicion) {
-}
+do{
+  console.WriteLine(x);
+} while (condicion);
+*/
+
 
 
 } while (

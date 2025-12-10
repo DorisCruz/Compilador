@@ -25,6 +25,12 @@ namespace Prac1
         int N_error = 0;
         StringBuilder reporteFinal = new StringBuilder();
         int erroresSintacticos = 0;
+        int llavesAbiertas = 0;
+        int llavesCerradas = 0;
+        bool dentroEstructura = false;
+        bool dentroComentarioMulti = false;
+
+
 
 
         // ========= PALABRAS RESERVADAS =========
@@ -74,7 +80,6 @@ namespace Prac1
             return codigo;
         }
 
-        // =================== MENÚS ===================
 
         private void nuevoToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -143,17 +148,14 @@ namespace Prac1
         }
 
 
-        // ======================================
         //   TOKEN: SIMBOLO
-        // ======================================
         private void Simbolo()
         {
             elemento = ((char)i_caracter).ToString();
         }
 
-        // ======================================
         //   TOKEN: CADENA "texto"
-        // ======================================
+    
         private void Cadena()
         {
             string token = "\"";
@@ -213,9 +215,7 @@ namespace Prac1
             elemento = token;
         }
 
-        // ======================================
         //   TOKEN: NÚMERO  / REAL
-        // ======================================
         private void Numero()
         {
             string token = "";
@@ -241,16 +241,13 @@ namespace Prac1
             elemento = token;
         }
 
-        // ======================================
-        //   COMENTARIOS //  O  /*   */
-        // ======================================
+        //   COMENTARIOS
         private bool Comentario()
         {
             if (i_caracter != '/') return false;
 
             i_caracter = Leer.Read();
 
-            // ---------- COMENTARIO DE LINEA ----------
             if (i_caracter == '/')
             {
                 string comentario = "//";
@@ -265,7 +262,6 @@ namespace Prac1
                 return true;
             }
 
-            // ---------- COMENTARIO MULTILINEA ----------
             if (i_caracter == '*')
             {
                 string comentario = "/*";
@@ -294,9 +290,7 @@ namespace Prac1
             return false;
         }
 
-        // ======================================
         //   REPORTE DE ERROR LÉXICO
-        // ======================================
         private void Error(int c)
         {
             Rtbx_salida.AppendText("Error léxico: " +
@@ -306,9 +300,7 @@ namespace Prac1
             i_caracter = Leer.Read();
         }
 
-        // ======================================
         //   CLASIFICADOR DE CARACTERES
-        // ======================================
         private char Tipo_caracter(int c)
         {
             if (char.IsLetter((char)c)) return 'l';
@@ -334,57 +326,6 @@ namespace Prac1
             reporteFinal.AppendLine(mensaje);
         }
 
-        //  VERIFICACIÓN DE #include
-        private void VerificarDirectivaInclude()
-        {
-            if (archivo == null) return;
-
-            int lineaNum = 1;
-
-            Regex patronInclude = new Regex(@"^\s*#\s*include\s*(<\w+\.h>|""\w+\.h"")\s*$");
-            Regex patronDirective = new Regex(@"^\s*#\s*(\w+)", RegexOptions.Compiled);
-
-            using (StreamReader sr = new StreamReader(archivo))
-            {
-                string linea;
-
-                while ((linea = sr.ReadLine()) != null)
-                {
-                    string trim = linea.TrimStart();
-
-                    if (trim.StartsWith("#"))
-                    {
-                        Match m = patronDirective.Match(trim);
-
-                        if (m.Success)
-                        {
-                            string nombre = m.Groups[1].Value;
-
-                            if (nombre == "include")
-                            {
-                                if (!patronInclude.IsMatch(trim))
-                                {
-                                    Rtbx_salida.AppendText($"Error en directiva include en línea {lineaNum}: {linea}\n");
-                                    N_error++;
-                                }
-                            }
-                            else
-                            {
-                                Rtbx_salida.AppendText($"Directiva desconocida en línea {lineaNum}: {linea}\n");
-                                N_error++;
-                            }
-                        }
-                    }
-
-                    lineaNum++;
-                }
-            }
-        }
-
-       
-
-        
-        
 
         private void guardar()
         {
@@ -439,6 +380,32 @@ namespace Prac1
             }
         }
 
+        private void VerificarPuntoYComa(string linea, int numLinea)
+        {
+            if (!dentroEstructura) return;
+
+            string l = linea.Trim();
+
+            if (l.EndsWith(";") ||
+                l.EndsWith("{") ||
+                l.EndsWith("}") ||
+                l.EndsWith(":") ||
+                l.StartsWith("if") ||
+                l.StartsWith("for") ||
+                l.StartsWith("while") ||
+                l.StartsWith("switch") ||
+                l.StartsWith("case") ||
+                l.StartsWith("default") ||
+                l.StartsWith("do"))
+                return;
+
+            erroresSintacticos++;
+            string msg = $"Error sintáctico en línea {numLinea}: falta ';' → {l}";
+            Rtbx_salida.AppendText(msg + "\n");
+            reporteFinal.AppendLine(msg);
+        }
+
+
         private string AnalizarLinea(string linea, int numLinea)
          {
              string l = linea.Trim();
@@ -446,12 +413,22 @@ namespace Prac1
              if (string.IsNullOrWhiteSpace(l)) return "";
              if (l.StartsWith("//") || l.StartsWith("/*") || l.StartsWith("*")) return "";
 
-             // Aceptar llaves sin error
-             if (l == "{" || l == "}")
+            // Contar llaves
+            if (l == "{")
+            {
+                llavesAbiertas++;
                 return "";
+            }
 
-             // Aceptar break;
-             if (l == "break;" || l == "continue;")
+            if (l == "}")
+            {
+                llavesCerradas++;
+                return "";
+            }
+
+
+            // Aceptar break;
+            if (l == "break;" || l == "continue;")
                 return "";
 
              // Aceptar return
@@ -491,118 +468,10 @@ namespace Prac1
             return $"Error sintáctico en línea {numLinea}: instrucción no reconocida → {l}";
         }
 
-        private void AnalizarEstructura(string linea, int numLinea)
-        {
-            if (linea.StartsWith("if"))
-            {
-                if (Regex.IsMatch(linea, @"^if\s*\(\s*condicion\s*\)\s*\{?$"))
-                    Rtbx_salida.AppendText($"If correcto en línea {numLinea}\n");
-                else
-                {
-                    Rtbx_salida.AppendText($"Error en línea {numLinea}: if mal formado → {linea}\n");
-                    N_error++;
-                }
-                return;
-            }
+     
+      
 
-            if (linea == "else" || linea == "else{")
-            {
-                Rtbx_salida.AppendText($"Else correcto en línea {numLinea}\n");
-                return;
-            }
-
-            if (linea.StartsWith("while"))
-            {
-                if (Regex.IsMatch(linea, @"^while\s*\(\s*condicion\s*\)\s*\{?$"))
-                    Rtbx_salida.AppendText($"While correcto en línea {numLinea}\n");
-                else
-                {
-                    Rtbx_salida.AppendText($"Error en línea {numLinea}: while mal formado → {linea}\n");
-                    N_error++;
-                }
-                return;
-            }
-
-            if (linea.StartsWith("for"))
-            {
-                if (Regex.IsMatch(linea, @"^for\s*\(\s*condicion\s*\)\s*\{?$"))
-                    Rtbx_salida.AppendText($"For correcto en línea {numLinea}\n");
-                else
-                {
-                    Rtbx_salida.AppendText($"Error en línea {numLinea}: for mal formado → {linea}\n");
-                    N_error++;
-                }
-                return;
-            }
-
-            if (linea.StartsWith("switch"))
-            {
-                if (Regex.IsMatch(linea, @"^switch\s*\(\s*condicion\s*\)\s*\{?$"))
-                    Rtbx_salida.AppendText($"Switch correcto en línea {numLinea}\n");
-                else
-                {
-                    Rtbx_salida.AppendText($"Error en línea {numLinea}: switch mal formado → {linea}\n");
-                    N_error++;
-                }
-                return;
-            }
-
-            if (Regex.IsMatch(linea, @"^case\s+\d+\s*:"))
-            {
-                Rtbx_salida.AppendText($"Case correcto en línea {numLinea}\n");
-                return;
-            }
-
-            if (linea.StartsWith("default"))
-            {
-                Rtbx_salida.AppendText($"Default correcto en línea {numLinea}\n");
-                return;
-            }
-
-            if (linea == "do" || linea == "do{")
-            {
-                Rtbx_salida.AppendText($"Inicio do-while correcto en línea {numLinea}\n");
-                return;
-            }
-
-            if (Regex.IsMatch(linea, @"^\}\s*while\s*\(\s*condicion\s*\)\s*;?$"))
-            {
-                Rtbx_salida.AppendText($"Fin do-while correcto en línea {numLinea}\n");
-                return;
-            }
-        }
-
-
-        private void AnalizarEstructurasControl()
-        {
-            if (archivo == null) return;
-
-            int numLinea = 1;
-
-            using (StreamReader sr = new StreamReader(archivo))
-            {
-                string linea;
-                while ((linea = sr.ReadLine()) != null)
-                {
-                    string l = linea.Trim();
-
-                    if (string.IsNullOrWhiteSpace(l) ||
-                        l.StartsWith("//") ||
-                        l.StartsWith("/*") ||
-                        l.StartsWith("*"))
-                    {
-                        numLinea++;
-                        continue;
-                    }
-
-                    AnalizarEstructura(l, numLinea);
-                    numLinea++;
-                }
-            }
-        }
-
-
-        // ======================= INCLUDE =======================
+        // INCLUDE 
         private string AnalizarInclude(string l, int numLinea)
         {
             if (!Regex.IsMatch(l, @"^#include\s*(<\w+\.h>|""\w+\.h"")$"))
@@ -617,7 +486,7 @@ namespace Prac1
         }
 
 
-        // ===================== DECLARACIONES ====================
+        // DECLARACIONES
         private string AnalizarDeclaracion(string l, int n)
         {
             if (!Regex.IsMatch(l, @"^(int|float|char|double)\s+[a-zA-Z_]\w*(\s*=\s*[^;]+)?;$"))
@@ -644,13 +513,38 @@ namespace Prac1
 
 
         // SWITCH 
-        private string AnalizarSwitch(string l, int n)
+        private string AnalizarSwitch(string linea, int numLinea)
         {
-            if (!Regex.IsMatch(l, @"^switch\s*\(\s*condicion\s*\)\s*\{?$"))
-                return $"Error sintáctico en línea {n}: switch mal formado";
+            string l = linea.Trim();
 
-            return "Switch correcto";
+            if (!Regex.IsMatch(l, @"^switch\b"))
+                return $"Error sintáctico en línea {numLinea}: switch mal formado → {linea}";
+
+            int posOpen = l.IndexOf('(');
+            if (posOpen < 0)
+                return $"Error sintáctico en línea {numLinea}: falta '(' en switch → {linea}";
+
+            int posClose = l.IndexOf(')', posOpen + 1);
+            if (posClose < 0)
+                return $"Error sintáctico en línea {numLinea}: falta ')' en switch → {linea}";
+
+            string condicion = l.Substring(posOpen + 1, posClose - posOpen - 1).Trim();
+            if (string.IsNullOrWhiteSpace(condicion))
+                return $"Error sintáctico en línea {numLinea}: condición vacía en switch → {linea}";
+
+            string resto = l.Substring(posClose + 1).Trim();
+
+            if (resto.Length == 0)
+            {
+                return $"Switch correcto en línea {numLinea}";
+            }
+
+            if (resto.StartsWith("{"))
+                return $"Switch correcto en línea {numLinea}";
+
+            return $"Error sintáctico en línea {numLinea}: formato inesperado después del ')' en switch → {linea}";
         }
+
 
         // CASE / DEFAULT
         private string AnalizarCase(string l, int n)
@@ -690,7 +584,7 @@ namespace Prac1
         }
 
 
-        // ========================= CICLOS =======================
+        //  CICLOS 
         private string AnalizarCiclo(string l, int n)
         {
             if (Regex.IsMatch(l, @"^for\s*\(\s*condicion\s*\)\s*\{?$"))
@@ -716,97 +610,172 @@ namespace Prac1
             return $"Error sintáctico en línea {n}: ciclo mal formado";
         }
 
-        // ANÁLISIS LÉXICO COMPLETO
+        // ANÁLISIS LÉXICO 
         private void AnalisisLexico()
         {
-            elemento = "";
-            Numero_linea = 1;
             int erroresLexicos = 0;
+            int numLinea = 1;
 
-            archivoback = archivo.Remove(archivo.Length - 1) + "back";
-            Escribir = new StreamWriter(archivoback);
-            Leer = new StreamReader(archivo);
+            Rtbx_salida.Clear();
 
             // Tokens válidos
-            Regex tokenRegex = new Regex(
-                @"#|include|<[^>]+>|""[^""]+""|[a-zA-Z_]\w*|\d+|[{}()\[\];,+\-*/=%<>]|//.*|/\*.*?\*/",
-                RegexOptions.Compiled | RegexOptions.Singleline
-            );
-
-            // Símbolos inválidos
             Regex simbolosInvalidos = new Regex(@"[^a-zA-Z0-9_{}\[\]\(\);\#\""<>\+\-\*/=:%\s,\.]");
 
-            // #include válido
-            Regex includeValido = new Regex(@"#\s*include\s*(<\w+\.h>|""\w+\.h"")");
+            string[] lineas = richTextBox1.Text.Split('\n');
 
-            string linea;
-
-            while ((linea = Leer.ReadLine()) != null)
+            foreach (string linea in lineas)
             {
-                if (string.IsNullOrWhiteSpace(linea))
+                string l = linea.Trim();
+
+                // Saltar líneas vacías y comentarios
+                if (string.IsNullOrWhiteSpace(l) || l.StartsWith("//") || l.StartsWith("/*") || l.StartsWith("*"))
                 {
-                    Escribir.WriteLine("SL");
+                    numLinea++;
+                    continue;
                 }
-                else
+
+                // Detectar símbolos inválidos
+                Match m = simbolosInvalidos.Match(l);
+                if (m.Success)
                 {
-                    string trimmed = linea.TrimStart();
+                    Rtbx_salida.AppendText($"Error léxico en línea {numLinea}: carácter no válido '{m.Value}'\n");
+                    erroresLexicos++;
+                }
 
-                    // Validar includes mal escritos
-                    if (trimmed.StartsWith("#include"))
+                // Validación básica de #include
+                if (l.StartsWith("#include"))
+                {
+                    if (!Regex.IsMatch(l, @"^#include\s*(<\w+\.h>|""\w+\.h"")$"))
                     {
-                        if (!includeValido.IsMatch(trimmed))
-                        {
-                            Rtbx_salida.AppendText($"Error léxico en línea {Numero_linea}: librería mal escrita - {linea}\n");
-                            erroresLexicos++;
-                        }
-
-                        // Sustituir <loquesea.h> por "libreria"
-                        linea = Regex.Replace(linea, @"<[^>]+>|""[^""]+""", "libreria");
-                    }
-
-                    // Tokenizar
-                    MatchCollection tokens = tokenRegex.Matches(linea);
-
-                    foreach (Match token in tokens)
-                    {
-                        string valor = token.Value.Trim();
-
-                        if (string.IsNullOrWhiteSpace(valor))
-                            continue;
-
-                        Escribir.WriteLine(valor);
-                    }
-
-                    // Símbolos ilegales
-                    if (!trimmed.StartsWith("//") && !trimmed.Contains("/*"))
-                    {
-                        Match m = simbolosInvalidos.Match(linea);
-                        if (m.Success)
-                        {
-                            Rtbx_salida.AppendText($"Error léxico en línea {Numero_linea}: carácter no válido '{m.Value}'\n");
-                            erroresLexicos++;
-                        }
+                        Rtbx_salida.AppendText(
+                            $"Error léxico en línea {numLinea}: #include mal escrito → {linea}\n");
+                        erroresLexicos++;
                     }
                 }
 
-                Numero_linea++;
+                numLinea++;
             }
 
-            Escribir.Close();
-            Leer.Close();
-
             Rtbx_salida.AppendText($"Errores léxicos: {erroresLexicos}\n");
-            N_error += erroresLexicos;
+            erroresSintacticos += erroresLexicos;
         }
 
-        // =========================================================
-        //      BOTÓN ANALIZAR  (LEX + SINTÁCTICO)
-        // =========================================================
-        private void analizarToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ActualizarEstadoEstructura(string linea)
         {
+            if (linea.StartsWith("if") ||
+                linea.StartsWith("for") ||
+                linea.StartsWith("while") ||
+                linea.StartsWith("switch") ||
+                linea == "do" || linea == "do{")
+            {
+                dentroEstructura = true;
+            }
+
+            if (linea == "}")
+            {
+                dentroEstructura = false;
+            }
+        }
+
+
+        private void GenerarBack()
+        {
+            if (string.IsNullOrEmpty(archivo)) return;
+
+            string archivoBack = Path.ChangeExtension(archivo, ".back");
+
+            File.WriteAllText(archivoBack, richTextBox1.Text);
+        }
+
+        private void DetectarEstructuraMalEscrita(string linea, int numLinea)
+        {
+            string[] validas = { "if", "for", "while", "switch", "do" };
+
+            string l = linea.TrimStart();
+
+            // Si tiene paréntesis, puede ser estructura
+            if (l.Contains("("))
+            {
+                bool esValida = false;
+
+                foreach (string v in validas)
+                {
+                    if (l.StartsWith(v + "(") || l.StartsWith(v + " ("))
+                    {
+                        esValida = true;
+                        break;
+                    }
+                }
+
+                if (!esValida)
+                {
+                    erroresSintacticos++;
+                    string msg = $"Error sintáctico en línea {numLinea}: estructura mal escrita → {l}";
+                    Rtbx_salida.AppendText(msg + "\n");
+                    reporteFinal.AppendLine(msg);
+                }
+            }
+        }
+
+        private bool EsComentarioMultilinea(string linea)
+        {
+            string l = linea.Trim();
+
+            // Si ya estamos dentro del comentario
+            if (dentroComentarioMulti)
+            {
+                if (l.Contains("*/"))
+                {
+                    dentroComentarioMulti = false;
+                }
+                return true;
+            }
+
+            // Si empieza comentario multilínea
+            if (l.Contains("/*"))
+            {
+                // Si no se cierra en la misma línea
+                if (!l.Contains("*/"))
+                {
+                    dentroComentarioMulti = true;
+                }
+                return true;
+            }
+
+            // Comentario de una sola línea
+            if (l.StartsWith("//"))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+
+        //  BOTÓN ANALIZAR
+        private void analizarToolStripMenuItem_Click(object sender, EventArgs e)
+        {// Limpiar reportes y errores
             reporteFinal.Clear();
             erroresSintacticos = 0;
             N_error = 0;
+
+
+            // ASEGURAR archivo físico (necesario para .back)
+            if (string.IsNullOrEmpty(archivo))
+            {
+                archivo = Path.Combine(Application.StartupPath, "temporal.c");
+                File.WriteAllText(archivo, richTextBox1.Text);
+            }
+
+            guardar();
+            Application.DoEvents();
+            GenerarBack();
+            AnalisisLexico();
+
+
+            // RESETEAR contadores de llaves
+            llavesAbiertas = 0;
+            llavesCerradas = 0;
 
             string[] lineas = richTextBox1.Text.Split('\n');
 
@@ -814,33 +783,83 @@ namespace Prac1
 
             for (int i = 0; i < lineas.Length; i++)
             {
-                string l = lineas[i].Trim();
-                int numLinea = i + 1;
+                string l = lineas[i];
 
                 if (string.IsNullOrWhiteSpace(l))
                     continue;
 
-                if (l.StartsWith("#include"))
-                    AnalizarInclude(l, numLinea);
-                else if (l.StartsWith("if"))
-                    AnalizarIf(l, numLinea);
-                else if (l.StartsWith("for"))
-                    AnalizarFor(l, numLinea);
-                else if (l.StartsWith("while"))
-                    AnalizarCiclo(l, numLinea);
-                else if (l.StartsWith("switch"))
-                    AnalizarSwitch(l, numLinea);
+                int numLinea = i + 1;
+
+                // Contar llaves
+                llavesAbiertas += l.Count(c => c == '{');
+                llavesCerradas += l.Count(c => c == '}');
+
+                string lineaTrim = l.Trim();
+
+                if (EsComentarioMultilinea(lineaTrim))
+                    continue;
+
+
+
+                // Detectar entrada a estructuras
+                ActualizarEstadoEstructura(lineaTrim);
+
+                // Verificar falta de ;
+                VerificarPuntoYComa(lineaTrim, numLinea);
+                
+
+                if (lineaTrim.StartsWith("#include"))
+                {
+                    AnalizarInclude(lineaTrim, numLinea);
+                }
+                else if (lineaTrim.StartsWith("if"))
+                {
+                    AnalizarIf(lineaTrim, numLinea);
+                }
+                else if (lineaTrim.StartsWith("for"))
+                {
+                    AnalizarFor(lineaTrim, numLinea);
+                }
+                else if (lineaTrim.StartsWith("while"))
+                {
+                    AnalizarCiclo(lineaTrim, numLinea);
+                }
+                else if (lineaTrim.StartsWith("switch"))
+                {
+                    string res = AnalizarSwitch(lineaTrim, numLinea);
+                    Rtbx_salida.AppendText(res + "\n");
+                    reporteFinal.AppendLine(res);
+                }
+
+                DetectarEstructuraMalEscrita(lineaTrim, numLinea);
+
             }
 
-            reporteFinal.AppendLine($"\nTotal de errores sintácticos y léxicos: {erroresSintacticos}");
+            // Validar llaves
+            if (llavesAbiertas != llavesCerradas)
+            {
+                string msg = $"\nError: faltan llaves. Abiertas: {llavesAbiertas}, Cerradas: {llavesCerradas}\n";
+                Rtbx_salida.AppendText(msg);
+                reporteFinal.AppendLine(msg);
+                N_error++;
+            }
+            else
+            {
+                string msg = "\nLlaves balanceadas correctamente\n";
+                Rtbx_salida.AppendText(msg);
+                reporteFinal.AppendLine(msg);
+            }
+
+            // Total de errores
+            string total = $"\nTotal de errores sintácticos y léxicos: {erroresSintacticos}";
+            Rtbx_salida.AppendText(total);
+            reporteFinal.AppendLine(total);
 
             Rtbx_salida.Text = reporteFinal.ToString();
         }
 
 
-        // =========================================================
-        //      BOTÓN TRADUCIR (.trad)
-        // =========================================================
+        // BOTÓN TRADUCIR 
         private void traducirToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(richTextBox1.Text))
@@ -868,9 +887,6 @@ namespace Prac1
             }
         }
 
-        // =========================================================
-        //  EVENTO RICHTEXTBOX (NO SE USA)
-        // =========================================================
         private void richTextBox1_TextChanged(object sender, EventArgs e)
         {
         }
