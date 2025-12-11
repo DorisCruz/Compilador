@@ -147,149 +147,6 @@ namespace Prac1
             Application.Exit();
         }
 
-
-        //   TOKEN: SIMBOLO
-        private void Simbolo()
-        {
-            elemento = ((char)i_caracter).ToString();
-        }
-
-        //   TOKEN: CADENA "texto"
-    
-        private void Cadena()
-        {
-            string token = "\"";
-            i_caracter = Leer.Read();
-
-            while (i_caracter != 34 && i_caracter != -1)
-            {
-                token += (char)i_caracter;
-                i_caracter = Leer.Read();
-            }
-
-            token += "\"";
-            elemento = token;
-        }
-
-        // ======================================
-        //   TOKEN: CARACTER 'A'
-        // ======================================
-        private void Caracter()
-        {
-            string token = "'";
-            i_caracter = Leer.Read();
-
-            if (i_caracter != -1 && i_caracter != '\'')
-            {
-                token += (char)i_caracter;
-                i_caracter = Leer.Read();
-            }
-
-            if (i_caracter == 39)
-            {
-                token += "'";
-            }
-            else
-            {
-                Error(39);
-            }
-
-            elemento = token;
-        }
-
-        // ======================================
-        //   TOKEN: IDENTIFICADOR / PALABRA RESERVADA
-        // ======================================
-        private void Identificador()
-        {
-            string token = "";
-
-            do
-            {
-                token += (char)i_caracter;
-                i_caracter = Leer.Read();
-            }
-            while (Tipo_caracter(i_caracter) == 'l' ||
-                   Tipo_caracter(i_caracter) == 'd');
-
-            elemento = token;
-        }
-
-        //   TOKEN: NÚMERO  / REAL
-        private void Numero()
-        {
-            string token = "";
-
-            do
-            {
-                token += (char)i_caracter;
-                i_caracter = Leer.Read();
-            }
-            while (Tipo_caracter(i_caracter) == 'd');
-
-            if ((char)i_caracter == '.')
-            {
-                token += ".";
-                i_caracter = Leer.Read();
-                while (Tipo_caracter(i_caracter) == 'd')
-                {
-                    token += (char)i_caracter;
-                    i_caracter = Leer.Read();
-                }
-            }
-
-            elemento = token;
-        }
-
-        //   COMENTARIOS
-        private bool Comentario()
-        {
-            if (i_caracter != '/') return false;
-
-            i_caracter = Leer.Read();
-
-            if (i_caracter == '/')
-            {
-                string comentario = "//";
-
-                while (i_caracter != '\n' && i_caracter != -1)
-                {
-                    comentario += (char)i_caracter;
-                    i_caracter = Leer.Read();
-                }
-
-                elemento = comentario;
-                return true;
-            }
-
-            if (i_caracter == '*')
-            {
-                string comentario = "/*";
-                bool finComentario = false;
-
-                while (!finComentario && i_caracter != -1)
-                {
-                    i_caracter = Leer.Read();
-                    comentario += (char)i_caracter;
-
-                    if (i_caracter == '\n') Numero_linea++;
-
-                    if (i_caracter == '*')
-                    {
-                        i_caracter = Leer.Read();
-                        comentario += (char)i_caracter;
-
-                        if (i_caracter == '/') finComentario = true;
-                    }
-                }
-
-                elemento = comentario;
-                return true;
-            }
-
-            return false;
-        }
-
         //   REPORTE DE ERROR LÉXICO
         private void Error(int c)
         {
@@ -386,6 +243,9 @@ namespace Prac1
 
             string l = linea.Trim();
 
+            if (l.StartsWith("#include"))
+                return;
+
             if (l.EndsWith(";") ||
                 l.EndsWith("{") ||
                 l.EndsWith("}") ||
@@ -396,7 +256,9 @@ namespace Prac1
                 l.StartsWith("switch") ||
                 l.StartsWith("case") ||
                 l.StartsWith("default") ||
-                l.StartsWith("do"))
+                l.StartsWith("do") ||
+                l.Contains("++") ||
+                l.Contains("--"))
                 return;
 
             erroresSintacticos++;
@@ -404,6 +266,7 @@ namespace Prac1
             Rtbx_salida.AppendText(msg + "\n");
             reporteFinal.AppendLine(msg);
         }
+
 
 
         private string AnalizarLinea(string linea, int numLinea)
@@ -610,55 +473,165 @@ namespace Prac1
             return $"Error sintáctico en línea {n}: ciclo mal formado";
         }
 
-        // ANÁLISIS LÉXICO 
         private void AnalisisLexico()
         {
             int erroresLexicos = 0;
-            int numLinea = 1;
+            Numero_linea = 1;
 
-            Rtbx_salida.Clear();
+            bool enComentarioMultilinea = false;
 
-            // Tokens válidos
-            Regex simbolosInvalidos = new Regex(@"[^a-zA-Z0-9_{}\[\]\(\);\#\""<>\+\-\*/=:%\s,\.]");
-
-            string[] lineas = richTextBox1.Text.Split('\n');
-
-            foreach (string linea in lineas)
+            archivoback = archivo.Remove(archivo.Length - 1) + "back";
+            using (StreamWriter Escribir = new StreamWriter(archivoback))
             {
-                string l = linea.Trim();
+                string[] lineas = richTextBox1.Text.Split('\n');
 
-                // Saltar líneas vacías y comentarios
-                if (string.IsNullOrWhiteSpace(l) || l.StartsWith("//") || l.StartsWith("/*") || l.StartsWith("*"))
+                foreach (string linea in lineas)
                 {
-                    numLinea++;
-                    continue;
-                }
+                    string l = linea.TrimEnd('\r');
 
-                // Detectar símbolos inválidos
-                Match m = simbolosInvalidos.Match(l);
-                if (m.Success)
-                {
-                    Rtbx_salida.AppendText($"Error léxico en línea {numLinea}: carácter no válido '{m.Value}'\n");
-                    erroresLexicos++;
-                }
-
-                // Validación básica de #include
-                if (l.StartsWith("#include"))
-                {
-                    if (!Regex.IsMatch(l, @"^#include\s*(<\w+\.h>|""\w+\.h"")$"))
+                    // LÍNEA VACÍA 
+                    if (string.IsNullOrWhiteSpace(l))
                     {
-                        Rtbx_salida.AppendText(
-                            $"Error léxico en línea {numLinea}: #include mal escrito → {linea}\n");
+                        Escribir.WriteLine("SL");
+                        Numero_linea++;
+                        continue;
+                    }
+
+                    // MANEJO DE COMENTARIOS MULTILÍNEA
+                    if (enComentarioMultilinea)
+                    {
+                        Escribir.WriteLine("ComentarioMultilinea");
+
+                        if (l.Contains("*/"))
+                        {
+                            Escribir.WriteLine("FINdeComentarioMultilinea");
+                            enComentarioMultilinea = false;
+                        }
+
+                        Escribir.WriteLine("SL");
+                        Numero_linea++;
+                        continue;
+                    }
+
+                    // COMENTARIO SIMPLE 
+                    if (l.TrimStart().StartsWith("//"))
+                    {
+                        Escribir.WriteLine("ComentarioSimple");
+                        Escribir.WriteLine("SL");
+                        Numero_linea++;
+                        continue;
+                    }
+
+                    // INICIO COMENTARIO MULTILÍNEA /*
+                    if (l.Contains("/*"))
+                    {
+                        Escribir.WriteLine("COMENTARIO_MULTILINEA_INICIO");
+
+                        if (!l.Contains("*/"))
+                        {
+                            enComentarioMultilinea = true;
+                        }
+                        else
+                        {
+                            Escribir.WriteLine("COMENTARIO_MULTILINEA_FIN");
+                        }
+
+                        Escribir.WriteLine("SL");
+                        Numero_linea++;
+                        continue;
+                    }
+
+                    var tokenRegex = new Regex(
+                        @"\"".*?\""|//.*|/\*.*?\*/|\w+|\d+|\+\+|--|<=|>=|==|!=|[{}()\[\];,+\-*/=%<>]",
+                        RegexOptions.Singleline);
+
+                    MatchCollection tokens = tokenRegex.Matches(l);
+
+                    foreach (Match t in tokens)
+                    {
+                        string tok = t.Value;
+
+                        // CADENA
+                        if (tok.StartsWith("\""))
+                        {
+                            Escribir.WriteLine("cadena");
+                            continue;
+                        }
+
+                        // LIBRERÍA <stdio.h>
+                        if (Regex.IsMatch(tok, @"^<.*>$"))
+                        {
+                            Escribir.WriteLine("libreria");
+                            continue;
+                        }
+
+                        // PALABRAS RESERVADAS
+                        string[] reservadas = {
+                    "int","float","char","double","void",
+                    "if","else","for","while","switch",
+                    "case","default","do","return","break","continue"
+                };
+
+                        if (reservadas.Contains(tok))
+                        {
+                            Escribir.WriteLine(tok);
+                            continue;
+                        }
+
+                        // NÚMEROS
+                        if (Regex.IsMatch(tok, @"^\d+(\.\d+)?$"))
+                        {
+                            if (tok.Contains("."))
+                            {
+                                var partes = tok.Split('.');
+                                Escribir.WriteLine("Numero");
+                                Escribir.WriteLine(".");
+                                Escribir.WriteLine("Numero");
+                            }
+                            else
+                            {
+                                Escribir.WriteLine("Numero");
+                            }
+                            continue;
+                        }
+
+                        // IDENTIFICADORES
+                        if (Regex.IsMatch(tok, @"^[a-zA-Z_]\w*$"))
+                        {
+                            if (tok == "main")
+                                Escribir.WriteLine("main");
+                            else
+                                Escribir.WriteLine("identificador");
+
+                            continue;
+                        }
+
+                        // SÍMBOLOS
+                        if ("{}()[];,+-*/=%<>".Contains(tok))
+                        {
+                            Escribir.WriteLine(tok);
+                            continue;
+                        }
+
+                        if (tok == "++" || tok == "--")
+                        {
+                            Escribir.WriteLine(tok[0].ToString());
+                            Escribir.WriteLine(tok[1].ToString());
+                            continue;
+                        }
+
+                        Escribir.WriteLine("TOKEN_DESCONOCIDO");
                         erroresLexicos++;
                     }
-                }
 
-                numLinea++;
+                    Escribir.WriteLine("LF");
+                    Numero_linea++;
+                }
             }
 
             Rtbx_salida.AppendText($"Errores léxicos: {erroresLexicos}\n");
-            erroresSintacticos += erroresLexicos;
         }
+
 
         private void ActualizarEstadoEstructura(string linea)
         {
@@ -689,18 +662,30 @@ namespace Prac1
 
         private void DetectarEstructuraMalEscrita(string linea, int numLinea)
         {
-            string[] validas = { "if", "for", "while", "switch", "do" };
+            // Palabras válidas
+            string[] estructuras = { "if", "for", "while", "switch", "do" };
+
+            // Tipos de datos para ignorar (funciones normales)
+            string[] tipos = { "int ", "float ", "double ", "void ", "char " };
 
             string l = linea.TrimStart();
 
-            // Si tiene paréntesis, puede ser estructura
-            if (l.Contains("("))
+            // Si parece función, no marcar error
+            foreach (string t in tipos)
+            {
+                if (l.StartsWith(t))
+                    return;
+            }
+
+            // Solo validar estructuras reales
+            if (l.Contains("(") && (l.StartsWith("if") || l.StartsWith("for") ||
+                                    l.StartsWith("while") || l.StartsWith("switch")))
             {
                 bool esValida = false;
 
-                foreach (string v in validas)
+                foreach (string e in estructuras)
                 {
-                    if (l.StartsWith(v + "(") || l.StartsWith(v + " ("))
+                    if (l.StartsWith(e + " "))
                     {
                         esValida = true;
                         break;
@@ -710,12 +695,13 @@ namespace Prac1
                 if (!esValida)
                 {
                     erroresSintacticos++;
-                    string msg = $"Error sintáctico en línea {numLinea}: estructura mal escrita → {l}";
+                    string msg = $"Error sintáctico en línea {numLinea}: estructura mal escrita → {linea}";
                     Rtbx_salida.AppendText(msg + "\n");
                     reporteFinal.AppendLine(msg);
                 }
             }
         }
+
 
         private bool EsComentarioMultilinea(string linea)
         {

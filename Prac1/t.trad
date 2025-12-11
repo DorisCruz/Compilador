@@ -1,0 +1,33 @@
+#include <stdio.h>
+
+int  principal () {
+
+    int  x  = 10 ;
+    float  y  = 5 .5 ;
+
+    si  (x  > 0 ) {
+        imprimir ("Positivo");
+    }
+
+    para  (int  i  = 0 ; i  < 10 ; i ++) {
+        x ++;
+}
+    sitch  (x ) {
+        caso  1 ;
+            imprimir ("Uno");
+        romper ;
+        defecto :
+            imprimir ("Otro");
+        romper ;
+    }
+
+    hacer  {
+        x ++;
+    } mientras  (x  < 20 )
+
+    mientras  (x  < 30 ) {
+        x ++;
+    }
+
+    retornar  0 ;
+}

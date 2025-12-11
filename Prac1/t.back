@@ -1,54 +1,141 @@
-Simbolo: #
+#
+include
+<
+libreria
+>
+LF
+int
+main
+(
+)
+{
+LF
+LF
+int
 identificador
-Simbolo: \
+=
+Numero
+;
+LF
+float
 identificador
-Simbolo: <
-Archivo Libreria
-Simbolo: >
-SL
-Simbolo: #
-Palabra Reservada
+=
+Numero
+.
+Numero
+;
+LF
+LF
+if
+(
+identificador
+>
+Numero
+)
+{
+LF
+printf
+(
 cadena
-SL
-Simbolo: #
-Palabra Reservada
-Simbolo: <
-Archivo Libreria
-Simbolo: >
-SL
-Palabra Reservada
+)
+;
+LF
+}
+LF
+LF
+for
+(
+int
 identificador
-Simbolo: ;
-SL
-Palabra Reservada
+=
+Numero
+;
 identificador
-Simbolo: ;
-SL
-Palabra Reservada
+<
+Numero
+;
 identificador
-Simbolo: ;
-SL
-Palabra Reservada
++
++
+)
+{
+LF
 identificador
-Simbolo: [
-numero_entero
-Simbolo: ]
-Simbolo: ;
-SL
-Palabra Reservada
++
++
+;
+LF
+}
+LF
 identificador
-Simbolo: [
-numero_entero
-Simbolo: ]
-Simbolo: ;
-SL
+(
 identificador
+)
+{
+LF
+case
+Numero
+;
+LF
+printf
+(
+cadena
+)
+;
+LF
+break
+;
+LF
+default
+:
+LF
+printf
+(
+cadena
+)
+;
+LF
+break
+;
+LF
+}
+LF
+LF
+do
+{
+LF
 identificador
-Simbolo: ;
-SL
-Palabra Reservada
++
++
+;
+LF
+}
+while
+(
 identificador
-Simbolo: [
-numero_entero
-Simbolo: ]
-Simbolo: ;
+<
+Numero
+)
+LF
+LF
+while
+(
+identificador
+<
+Numero
+)
+{
+LF
+identificador
++
++
+;
+LF
+}
+LF
+LF
+return
+Numero
+;
+LF
+}

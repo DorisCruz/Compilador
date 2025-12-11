@@ -8,27 +8,18 @@ if (condicion) {
 
 else {
 }
-
+/*
 switch (condicion) {
     case 1
     break;
     default:
     break;
 }
-/*
-fr (inicializacion; condicion; incremento) {
+*/
+for (inicializacion; condicion; incremento) {
 }
 
-do{
-  console.WriteLine(x);
-} while (condicion);
-*/
-
-
-
-} while (
-do {
-    y = y - 1;
+o{
 } while (condicion);
 
 return 0;

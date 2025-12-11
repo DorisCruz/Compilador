@@ -1,34 +1,80 @@
-#include <stdio.h>
-
-int x = 0;
-float y = 2.5;
-
-if (condicion) {
+identificador
+<
+identificador
+identificador
+>
+LF
+LF
+int
+identificador
+=
+Numero
+;
+LF
+float
+identificador
+=
+Numero
+Numero
+;
+LF
+LF
+if
+(
+identificador
+)
+{
+LF
 }
-
-else {
+LF
+LF
+else
+{
+LF
 }
-
-switch (condicion) {
-    case 1
-    break;
-    default:
-    break;
+LF
+COMENTARIO_MULTILINEA_INICIO
+LF
+COMENTARIO_MULTILINEA_CONT
+LF
+COMENTARIO_MULTILINEA_CONT
+LF
+COMENTARIO_MULTILINEA_CONT
+LF
+COMENTARIO_MULTILINEA_CONT
+LF
+COMENTARIO_MULTILINEA_CONT
+LF
+COMENTARIO_MULTILINEA_CONT
+LF
+COMENTARIO_MULTILINEA_CONT
+COMENTARIO_MULTILINEA_FIN
+LF
+for
+(
+identificador
+;
+identificador
+;
+identificador
+)
+{
+LF
 }
-/*
-fr (inicializacion; condicion; incremento) {
+LF
+LF
+identificador
+{
+LF
 }
-
-do{
-  console.WriteLine(x);
-} while (condicion);
-*/
-
-
-
-} while (
-do {
-    y = y - 1;
-} while (condicion);
-
-return 0;
+while
+(
+identificador
+)
+;
+LF
+LF
+return
+Numero
+;
+LF
