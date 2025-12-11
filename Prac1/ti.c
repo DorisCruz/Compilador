@@ -19,7 +19,8 @@ switch (condicion) {
 for (inicializacion; condicion; incremento) {
 }
 
-o{
+do{
+mhm;
 } while (condicion);
 
 return 0;

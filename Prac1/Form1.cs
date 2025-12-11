@@ -508,7 +508,6 @@ namespace Prac1
                             enComentarioMultilinea = false;
                         }
 
-                        Escribir.WriteLine("SL");
                         Numero_linea++;
                         continue;
                     }
@@ -624,7 +623,7 @@ namespace Prac1
                         erroresLexicos++;
                     }
 
-                    Escribir.WriteLine("LF");
+                    Escribir.WriteLine("SL");
                     Numero_linea++;
                 }
             }
@@ -662,45 +661,33 @@ namespace Prac1
 
         private void DetectarEstructuraMalEscrita(string linea, int numLinea)
         {
-            // Palabras válidas
-            string[] estructuras = { "if", "for", "while", "switch", "do" };
-
-            // Tipos de datos para ignorar (funciones normales)
+            string[] estructuras = { "if", "else", "for", "while", "switch", "do" };
             string[] tipos = { "int ", "float ", "double ", "void ", "char " };
 
             string l = linea.TrimStart();
 
-            // Si parece función, no marcar error
+            // Ignorar funciones o declaraciones
             foreach (string t in tipos)
-            {
                 if (l.StartsWith(t))
                     return;
-            }
 
-            // Solo validar estructuras reales
-            if (l.Contains("(") && (l.StartsWith("if") || l.StartsWith("for") ||
-                                    l.StartsWith("while") || l.StartsWith("switch")))
+            // Extraer primera palabra antes de espacio o (
+            string palabra = l.Split(' ', '(', '\t')[0];
+
+            // Si la palabra es correcta → no es error
+            if (estructuras.Contains(palabra))
+                return;
+
+            // Si NO es una palabra válida y tiene paréntesis → sospechoso
+            if (!estructuras.Contains(palabra) && l.Contains("("))
             {
-                bool esValida = false;
-
-                foreach (string e in estructuras)
-                {
-                    if (l.StartsWith(e + " "))
-                    {
-                        esValida = true;
-                        break;
-                    }
-                }
-
-                if (!esValida)
-                {
-                    erroresSintacticos++;
-                    string msg = $"Error sintáctico en línea {numLinea}: estructura mal escrita → {linea}";
-                    Rtbx_salida.AppendText(msg + "\n");
-                    reporteFinal.AppendLine(msg);
-                }
+                erroresSintacticos++;
+                string msg = $"Error sintáctico en línea {numLinea}: estructura de control mal escrita → {palabra}";
+                Rtbx_salida.AppendText(msg + "\n");
+                reporteFinal.AppendLine(msg);
             }
         }
+
 
 
         private bool EsComentarioMultilinea(string linea)
