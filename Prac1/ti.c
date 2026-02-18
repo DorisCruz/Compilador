@@ -1,26 +1,30 @@
 #include <stdio.h>
 
 int x = 0;
-float y = 2.5;
+float y = 25;
 
 if (condicion) {
 }
 
-else {
+else
+{
 }
-/*
+
 switch (condicion) {
     case 1
     break;
-    default:
+    default
     break;
 }
-*/
+
 for (inicializacion; condicion; incremento) {
+
 }
 
-do{
+do
+{
 mhm;
-} while (condicion);
+}
+ while (condicion);
 
 return 0;

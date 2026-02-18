@@ -1,9 +1,0 @@
-SL
-#include <stdio.h>
-SL
-int main()
-{
-    printf("Hello World");
-SL
-    return 0;
-}

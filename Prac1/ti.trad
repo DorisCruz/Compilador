@@ -1,31 +1,30 @@
 #include <stdio.h>
 
 int  x  = 0 ;
-float  y  = 2 .5 ;
+float  y  = 25 ;
 
-si  condicion ) {
+si  (condicion ) {
 }
 
-sino  {
+sino 
+{
 }
 
 selección  (condicion ) {
-    caso  1 :
+    caso  1 
     romper ;
-    defecto :
+    defecto 
     romper ;
 }
 
-para  (condicion ) {
+para  (inicializacion ; condicion ; incremento ) {
+
 }
 
-mientras  (condicion ) {
+hacer 
+{
+mhm ;
 }
-
-
-} mientras  (
-hacer  {
-    y  = y  - 1 ;
-} mientras  (condicion );
+ mientras  (condicion );
 
 retornar  0 ;
