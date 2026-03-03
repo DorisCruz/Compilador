@@ -1,6 +1,16 @@
 #include <stdio.h>
 
-float suma (float a float b)
+int suma(int a, int b, int c)
 {
-  return a+b;
+    int resultado;
+    resultado = a + b;
+    return resultado;
 }
+
+float promedio(float x, float y, float z)
+{
+    float total;
+    total = x + y;
+    return total;
+}
+

@@ -32,7 +32,6 @@ namespace Prac1
         bool comentarioMultilineaAbierto = false;
 
 
-
         Dictionary<string, string> PalabrasReservadasEsp = new Dictionary<string, string>()
         {
            {"int","entero"},
@@ -55,6 +54,19 @@ namespace Prac1
            {"condicion","condicion"}
         };
 
+        // Tabla de símbolos
+        public class Simbolo
+        {
+            public string Nombre { get; set; }
+            public string Tipo { get; set; }        // int, float, void, etc.
+            public string Categoria { get; set; }   // Variable, Funcion, Parametro
+            public string Ambito { get; set; }      // Global, o nombre de función
+            public string Parametros { get; set; }  // Solo para funciones
+            public int Linea { get; set; }
+        }
+
+        List<Simbolo> tablaSimbolos = new List<Simbolo>();
+        string ambitoActual = "Global";
         public Form1()
         {
             InitializeComponent();
@@ -137,7 +149,6 @@ namespace Prac1
             Application.Exit();
         }
 
-
       
         private void AgregarLinea(string seccion, string mensaje)
         {
@@ -175,8 +186,7 @@ namespace Prac1
             Form1.ActiveForm.Text = "Mi Compilador - " + archivo;
         }
 
-    
-
+  
         private void VerificarPuntoYComa(string linea, int numLinea)
         {
             if (!dentroEstructura) return;
@@ -206,12 +216,7 @@ namespace Prac1
             Rtbx_salida.AppendText(msg + "\n");
             reporteFinal.AppendLine(msg);
         }
-
-
-
-       
       
-
         // INCLUDE 
         private string AnalizarInclude(string l, int numLinea)
         {
@@ -320,12 +325,9 @@ namespace Prac1
 
             return $"Error sintáctico en línea {n}: ciclo mal formado";
         }
-
         private void AnalisisLexico()
         {
             int erroresLexicos = 0;
-
-            // Reiniciar estado
             comentarioMultilineaAbierto = false;
 
             Regex regexTokens = new Regex(
@@ -392,26 +394,80 @@ namespace Prac1
                         // Identificador o función
                         if (Regex.IsMatch(valor, @"^[a-zA-Z_]\w*$"))
                         {
-                            bool esFuncion =
-                                j + 1 < tokens.Count &&
-                                tokens[j + 1].Value == "(";
+                            bool esFuncion = j + 1 < tokens.Count && tokens[j + 1].Value == "(";
 
                             if (esFuncion)
                             {
                                 Escribir.WriteLine("funcion");
-
-                                Rtbx_salida.AppendText(
-                                    $"Función detectada en análisis léxico: {valor}\n");
+                                Rtbx_salida.AppendText($"Función detectada: {valor}\n");
                                 Rtbx_salida.ScrollToCaret();
+
+                                // Tipo de retorno (token anterior)
+                                string tipoRetorno = "void";
+                                if (j > 0)
+                                {
+                                    string tokenAnterior = tokens[j - 1].Value;
+                                    string[] tipos = { "int", "float", "void", "char", "double" };
+                                    if (tipos.Contains(tokenAnterior))
+                                        tipoRetorno = tokenAnterior;
+                                }
+
+                                // Extraer parámetros entre ( )
+                                string parametros = "";
+                                int k = j + 2;
+                                while (k < tokens.Count && tokens[k].Value != ")")
+                                {
+                                    parametros += tokens[k].Value + " ";
+                                    k++;
+                                }
+                                parametros = parametros.Trim();
+                                if (string.IsNullOrEmpty(parametros)) parametros = "ninguno";
+
+                                // Actualizar ámbito
+                                ambitoActual = valor;
+
+                                tablaSimbolos.Add(new Simbolo
+                                {
+                                    Nombre = valor,
+                                    Tipo = tipoRetorno,
+                                    Categoria = "Función",
+                                    Ambito = "Global",
+                                    Parametros = parametros,
+                                    Linea = i + 1
+                                });
                             }
                             else
                             {
                                 Escribir.WriteLine("identificador");
+
+                                string[] tiposC = { "int", "float", "char", "double", "void" };
+                                if (j > 0 && tiposC.Contains(tokens[j - 1].Value))
+                                {
+                                    // Detectar si estamos dentro de paréntesis de función
+                                    // buscando si hay un '(' antes en la misma línea sin cerrar
+                                    bool esParametro = false;
+                                    int abiertos = 0;
+                                    for (int p = 0; p <= j; p++)
+                                    {
+                                        if (tokens[p].Value == "(") abiertos++;
+                                        if (tokens[p].Value == ")") abiertos--;
+                                    }
+                                    esParametro = abiertos > 0;
+
+                                    tablaSimbolos.Add(new Simbolo
+                                    {
+                                        Nombre = valor,
+                                        Tipo = tokens[j - 1].Value,
+                                        Categoria = esParametro ? "Parámetro" : "Variable",
+                                        Ambito = ambitoActual,
+                                        Parametros = "-",
+                                        Linea = i + 1
+                                    });
+                                }
                             }
 
                             continue;
                         }
-
 
                         // Símbolos
                         Escribir.WriteLine(valor);
@@ -429,7 +485,9 @@ namespace Prac1
         {
             string l = linea.Trim();
 
-            // Detectar posible función
+            // Solo analizar si tiene paréntesis (es declaración de función)
+            if (!l.Contains("(")) return;  // <-- agrega esta línea
+
             if (Regex.IsMatch(l, @"^(int|float|void|char|double)\s+\w+"))
             {
                 if (!l.Contains("(") || !l.Contains(")"))
@@ -443,7 +501,6 @@ namespace Prac1
                     return;
                 }
 
-                // Extraer parámetros
                 int ini = l.IndexOf("(");
                 int fin = l.IndexOf(")");
 
@@ -452,7 +509,7 @@ namespace Prac1
                     string parametros = l.Substring(ini + 1, fin - ini - 1).Trim();
 
                     if (parametros.Length == 0)
-                        return; // función sin parámetros válida
+                        return; 
 
                     string[] lista = parametros.Split(',');
 
@@ -586,11 +643,45 @@ namespace Prac1
             return false;
         }
 
+        private void ExportarTablaCSV()
+        {
+            if (tablaSimbolos.Count == 0) return;
+
+            string carpeta = Path.GetDirectoryName(archivo);
+
+            // Archivo de funciones
+            string rutaFunciones = Path.Combine(carpeta, "funciones.csv");
+            using (StreamWriter sw = new StreamWriter(rutaFunciones))
+            {
+                sw.WriteLine("Nombre,Parámetros,Número de Parámetros");
+                foreach (var s in tablaSimbolos.Where(x => x.Categoria == "Función"))
+                {
+                    int numParams = s.Parametros == "ninguno" ? 0 : s.Parametros.Split(',').Length;
+                    sw.WriteLine($"{s.Nombre},{s.Parametros},{numParams}");
+                }
+            }
+
+            // Archivo de variables y parámetros
+            string rutaVariables = Path.Combine(carpeta, "variables.csv");
+            using (StreamWriter sw = new StreamWriter(rutaVariables))
+            {
+                sw.WriteLine("Nombre,Tipo,Origen");
+                foreach (var s in tablaSimbolos.Where(x => x.Categoria != "Función"))
+                    sw.WriteLine($"{s.Nombre},{s.Tipo},{s.Ambito}");
+            }
+
+            Rtbx_salida.AppendText($"\nArchivos CSV generados en: {carpeta}\n");
+            Rtbx_salida.AppendText($"- funciones.csv\n");
+            Rtbx_salida.AppendText($"- variables.csv\n");
+        }
+
 
         //  BOTÓN ANALIZAR
         private void analizarToolStripMenuItem_Click(object sender, EventArgs e)
         {
             reporteFinal.Clear();
+            tablaSimbolos.Clear();
+            ambitoActual = "Global";
             erroresSintacticos = 0;
             N_error = 0;
 
@@ -698,6 +789,8 @@ namespace Prac1
             reporteFinal.AppendLine(total);
 
             Rtbx_salida.Text = reporteFinal.ToString();
+
+            ExportarTablaCSV();
         }
 
 
