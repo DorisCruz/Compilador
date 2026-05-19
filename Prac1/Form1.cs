@@ -65,7 +65,22 @@ namespace Prac1
             public int Linea { get; set; }
         }
 
+        public class NodoArbol
+        {
+            public string Valor { get; set; }
+            public NodoArbol Izquierdo { get; set; }
+            public NodoArbol Derecho { get; set; }
+
+            public NodoArbol(string valor)
+            {
+                Valor = valor;
+                Izquierdo = null;
+                Derecho = null;
+            }
+        }
+
         List<Simbolo> tablaSimbolos = new List<Simbolo>();
+        Dictionary<string, double> valoresVariables = new Dictionary<string, double>();
         string ambitoActual = "Global";
         public Form1()
         {
@@ -186,37 +201,43 @@ namespace Prac1
             Form1.ActiveForm.Text = "Mi Compilador - " + archivo;
         }
 
-  
+
         private void VerificarPuntoYComa(string linea, int numLinea)
         {
-            if (!dentroEstructura) return;
-
             string l = linea.Trim();
 
-            if (l.StartsWith("#include"))
-                return;
+            if (l.StartsWith("#include")) return;
+            if (l.StartsWith("#")) return;
 
+            // Líneas que no necesitan ;
             if (l.EndsWith(";") ||
                 l.EndsWith("{") ||
                 l.EndsWith("}") ||
                 l.EndsWith(":") ||
+                l.Length == 0 ||
+                l.StartsWith("//") ||
+                l.StartsWith("/*") ||
+                l.StartsWith("*") ||
                 l.StartsWith("if") ||
+                l.StartsWith("else") ||
                 l.StartsWith("for") ||
                 l.StartsWith("while") ||
                 l.StartsWith("switch") ||
                 l.StartsWith("case") ||
                 l.StartsWith("default") ||
                 l.StartsWith("do") ||
-                l.Contains("++") ||
-                l.Contains("--"))
+                Regex.IsMatch(l, @"^(int|float|void|char|double)\s+\w+\s*\(")) // declaración de función
                 return;
 
-            erroresSintacticos++;
-            string msg = $"Error sintáctico en línea {numLinea}: falta ';' → {l}";
-            Rtbx_salida.AppendText(msg + "\n");
-            reporteFinal.AppendLine(msg);
+            // Si contiene = o es una expresión o declaración de variable, necesita ;
+            if (Regex.IsMatch(l, @"^[a-zA-Z_]") || Regex.IsMatch(l, @"^\d"))
+            {
+                erroresSintacticos++;
+                string msg = $"Error sintáctico en línea {numLinea}: falta ';' → {l}";
+                Rtbx_salida.AppendText(msg + "\n");
+                reporteFinal.AppendLine(msg);
+            }
         }
-      
         // INCLUDE 
         private string AnalizarInclude(string l, int numLinea)
         {
@@ -565,6 +586,8 @@ namespace Prac1
 
         private void DetectarEstructuraMalEscrita(string linea, int numLinea)
         {
+            if (Regex.IsMatch(linea, @"^[a-zA-Z_]\w*\s*=")) return;
+
             string[] estructuras = { "if", "else", "for", "while", "switch", "do" };
             string[] tipos = { "int ", "float ", "double ", "void ", "char " };
 
@@ -606,9 +629,248 @@ namespace Prac1
             }
         }
 
+       
+
+        private void AnalizarExpresion(string linea, int numLinea)
+        {
+            // Solo analizar líneas con asignación
+            if (!linea.Contains("=")) return;
+            if (linea.StartsWith("if") || linea.StartsWith("for") || linea.StartsWith("while")) return;
+
+            // Verificar que haya una variable antes del =
+            int posEqual = linea.IndexOf('=');
+            if (posEqual > 0 && "!<>".Contains(linea[posEqual - 1])) return;
+            if (posEqual + 1 < linea.Length && linea[posEqual + 1] == '=') return;
+            string ladoIzquierdo = linea.Substring(0, posEqual).Trim();
+
+            // Si es declaración con tipo como "int a", extraer solo el nombre
+            string[] tiposC = { "int", "float", "char", "double", "void" };
+            foreach (string tipo in tiposC)
+            {
+                if (ladoIzquierdo.StartsWith(tipo + " "))
+                {
+                    ladoIzquierdo = ladoIzquierdo.Substring(tipo.Length).Trim();
+                    break;
+                }
+            }
+            // Verificar que la variable del lado izquierdo esté definida
+            var simboloIzq = tablaSimbolos.FirstOrDefault(s => s.Nombre == ladoIzquierdo.Trim());
+            if (simboloIzq == null)
+            {
+                bool esDeclaracion = false;
+                string[] tiposC2 = { "int", "float", "char", "double", "void" };
+                foreach (string tipo in tiposC2)
+                    if (linea.TrimStart().StartsWith(tipo + " ")) { esDeclaracion = true; break; }
+
+                if (!esDeclaracion)
+                {
+                    erroresSintacticos++;
+                    Rtbx_salida.AppendText($"Error: variable '{ladoIzquierdo.Trim()}' no definida en línea {numLinea}. Declárela primero con su tipo. Ejemplo: int {ladoIzquierdo.Trim()} = ...\n");
+                    Rtbx_salida.AppendText("----------------------------------------\n");
+                    return;
+                }
+            }
+            else
+            {
+                // La variable existe pero verificar que no sea una asignación sin declaración previa
+                // es decir que la declaración fue en la misma línea o antes
+                bool esMismaLinea = linea.TrimStart().StartsWith("int ") ||
+                                    linea.TrimStart().StartsWith("float ") ||
+                                    linea.TrimStart().StartsWith("char ") ||
+                                    linea.TrimStart().StartsWith("double ");
+
+                if (!esMismaLinea && simboloIzq.Linea > numLinea)
+                {
+                    erroresSintacticos++;
+                    Rtbx_salida.AppendText($"Error: variable '{ladoIzquierdo.Trim()}' usada antes de ser declarada en línea {numLinea}\n");
+                    Rtbx_salida.AppendText("----------------------------------------\n");
+                    return;
+                }
+            }
+
+            if (!Regex.IsMatch(ladoIzquierdo, @"^[a-zA-Z_]\w*$"))
+            {
+                erroresSintacticos++;
+                string msg = $"Error sintáctico en línea {numLinea}: falta variable antes del '=' → {linea}";
+                Rtbx_salida.AppendText(msg + "\n");
+                reporteFinal.AppendLine(msg);
+                return;
+            }
+
+            // Extraer la parte derecha de la asignación
+            int posIgual = linea.IndexOf('=');
+
+            // Evitar == 
+            if (posIgual + 1 < linea.Length && linea[posIgual + 1] == '=') return;
+            // Evitar !=, <=, >=
+            if (posIgual > 0 && "!<>".Contains(linea[posIgual - 1])) return;
+
+            string expresion = linea.Substring(posIgual + 1).Trim().TrimEnd(';');
+
+            if (string.IsNullOrWhiteSpace(expresion)) return;
+
+            // 1. Verificar paréntesis balanceados
+            int abiertos = 0;
+            foreach (char c in expresion)
+            {
+                if (c == '(') abiertos++;
+                if (c == ')') abiertos--;
+                if (abiertos < 0)
+                {
+                    erroresSintacticos++;
+                    string msg = $"Error sintáctico en línea {numLinea}: ')' sin '(' en expresión → {expresion}";
+                    Rtbx_salida.AppendText(msg + "\n");
+                    reporteFinal.AppendLine(msg);
+                    return;
+                }
+            }
+            if (abiertos != 0)
+            {
+                erroresSintacticos++;
+                string msg = $"Error sintáctico en línea {numLinea}: paréntesis no balanceados en expresión → {expresion}";
+                Rtbx_salida.AppendText(msg + "\n");
+                reporteFinal.AppendLine(msg);
+                return;
+            }
+
+            // 2. Verificar operadores dobles, pero permitir ++ y --
+            string exprTemp = expresion.Replace("++", "").Replace("--", "");
+            // Quitar espacios para detectar operadores separados por espacios
+            string exprSinEspaciosTemp = exprTemp.Replace(" ", "");
+            if (Regex.IsMatch(exprSinEspaciosTemp, @"[+\-*/]{2,}"))
+            {
+                erroresSintacticos++;
+                string msg = $"Error sintáctico en línea {numLinea}: operadores consecutivos en expresión → {expresion}";
+                Rtbx_salida.AppendText(msg + "\n");
+                reporteFinal.AppendLine(msg);
+                return;
+            }
+
+            // 3. Verificar que no empiece ni termine con operador
+            char primero = expresion[0];
+            char ultimo = expresion[expresion.Length - 1];
+            if ("*/".Contains(primero))
+            {
+                erroresSintacticos++;
+                string msg = $"Error sintáctico en línea {numLinea}: expresión empieza con operador '{primero}' → {expresion}";
+                Rtbx_salida.AppendText(msg + "\n");
+                reporteFinal.AppendLine(msg);
+                return;
+            }
+            if ("+-*/".Contains(ultimo))
+            {
+                erroresSintacticos++;
+                string msg = $"Error sintáctico en línea {numLinea}: expresión termina con operador '{ultimo}' → {expresion}";
+                Rtbx_salida.AppendText(msg + "\n");
+                reporteFinal.AppendLine(msg);
+                return;
+            }
+
+            // 4. Verificar que los tokens sean válidos (números, identificadores, operadores, paréntesis)
+            string exprSinEspacios = expresion.Replace(" ", "");
+            if (!Regex.IsMatch(exprSinEspacios, @"^[a-zA-Z0-9_+\-*/().]+$"))
+            {
+                erroresSintacticos++;
+                string msg = $"Error sintáctico en línea {numLinea}: caracteres inválidos en expresión → {expresion}";
+                Rtbx_salida.AppendText(msg + "\n");
+                reporteFinal.AppendLine(msg);
+                return;
+            }
+            if (Regex.IsMatch(exprSinEspacios, @"\)[a-zA-Z0-9_(]|[a-zA-Z0-9_]\("))
+            {
+                erroresSintacticos++;
+                string msg = $"Error sintáctico en línea {numLinea}: falta operador entre operandos : {expresion}";
+                Rtbx_salida.AppendText(msg + "\n");
+                reporteFinal.AppendLine(msg);
+                return;
+            }
+            // Verificar que no haya operador antes de )  o después de (
+            if (Regex.IsMatch(exprSinEspacios, @"[+\-*/]\)|[\(][+*/]"))
+            {
+                erroresSintacticos++;
+                string msg = $"Error sintáctico en línea {numLinea}: operador sin operando en expresión → {expresion}";
+                Rtbx_salida.AppendText(msg + "\n");
+                reporteFinal.AppendLine(msg);
+                return;
+            }
+
+            // Si pasó todo, es correcta
+            string ok = $"Expresión correcta en línea {numLinea}: {expresion}";
+            Rtbx_salida.AppendText("\n" + ok + "\n");
+            reporteFinal.AppendLine(ok);
+
+            NodoArbol raiz = ConstruirArbol(expresion);
+            if (raiz != null)
+            {
+                Rtbx_salida.AppendText($"Raíz del árbol: {raiz.Valor}\n");
+
+                // Verificar que todas las variables de la expresión estén definidas
+                List<string> tokens = TokenizarExpresion(expresion);
+                foreach (string token in tokens)
+                {
+                    // Si el token es un identificador (no operador, no número)
+                    if (Regex.IsMatch(token, @"^[a-zA-Z_]\w*$"))
+                    {
+                        var existe = tablaSimbolos.FirstOrDefault(s => s.Nombre == token);
+                        if (existe == null)
+                        {
+                            erroresSintacticos++;
+                            Rtbx_salida.AppendText($"Error: variable '{token}' no definida en línea {numLinea}\n");
+                            Rtbx_salida.AppendText("----------------------------------------\n");
+                            return;
+                        }
+                    }
+                }
 
 
 
+                // Guardar valor si es declaración con valor numérico
+                try
+                {
+                    double valorInicial = EvaluarArbol(raiz);
+                    if (!valoresVariables.ContainsKey(ladoIzquierdo.Trim()))
+                        valoresVariables[ladoIzquierdo.Trim()] = valorInicial;
+                }
+                catch { }
+
+                try
+                {
+                    double resultado = EvaluarArbol(raiz);
+                    Rtbx_salida.AppendText($"Resultado: {resultado}\n");
+                    string varNombre = ladoIzquierdo.Trim();
+                    var simbolo = tablaSimbolos.FirstOrDefault(s => s.Nombre == varNombre);
+
+                    if (simbolo != null)
+                    {
+                        bool tieneDecimal = resultado != Math.Floor(resultado);
+
+                        if (simbolo.Tipo == "char")
+                        {
+                            erroresSintacticos++;
+                            Rtbx_salida.AppendText($"Error de correspondencia: '{varNombre}' es char y no puede almacenar una expresión aritmética\n");
+                        }
+                        else if (simbolo.Tipo == "int" && tieneDecimal)
+                        {
+                            erroresSintacticos++;
+                            Rtbx_salida.AppendText($"Error de correspondencia: '{varNombre}' es int pero el resultado {resultado} es decimal\n");
+                        }
+                        else if (simbolo.Tipo == "float" && !tieneDecimal)
+                        {
+                            Rtbx_salida.AppendText($"Advertencia: '{varNombre}' es float pero el resultado {resultado} es entero\n");
+                        }
+                    }
+                }
+                catch
+                {
+                    Rtbx_salida.AppendText("Resultado: no evaluable (contiene variables)\n");
+                }
+
+                Rtbx_salida.AppendText("----------------------------------------\n");
+            }
+        }
+        
+
+       
         private bool EsComentarioMultilinea(string linea)
         {
             string l = linea.Trim();
@@ -676,10 +938,144 @@ namespace Prac1
         }
 
 
+        //Arbol binario
+        private List<string> TokenizarExpresion(string expresion)
+        {
+
+            List<string> tokens = new List<string>();
+            string actual = "";
+
+            foreach (char c in expresion.Replace(" ", ""))
+            {
+                if ("+-*/()".Contains(c))
+                {
+                    if (actual.Length > 0)
+                    {
+                        tokens.Add(actual);
+                        actual = "";
+                    }
+                    tokens.Add(c.ToString());
+                }
+                else
+                {
+                    actual += c;
+                }
+            }
+
+            if (actual.Length > 0)
+                tokens.Add(actual);
+
+            return tokens;
+        }
+
+        private int ObtenerPrecedencia(string op)
+        {
+            if (op == "+" || op == "-") return 1;
+            if (op == "*" || op == "/") return 2;
+            return 0;
+        }
+
+        private NodoArbol ConstruirArbol(string expresion)
+        {
+
+            List<string> tokens = TokenizarExpresion(expresion);
+            Stack<NodoArbol> operandos = new Stack<NodoArbol>();
+            Stack<string> operadores = new Stack<string>();
+
+            foreach (string token in tokens)
+            {
+                if (token == "(")
+                {
+                    operadores.Push(token);
+                }
+                else if (token == ")")
+                {
+                    while (operadores.Count > 0 && operadores.Peek() != "(")
+                        AplicarOperador(operandos, operadores);
+                    if (operadores.Count > 0)
+                        operadores.Pop(); // quitar (
+                }
+                else if ("+-*/".Contains(token))
+                {
+                    while (operadores.Count > 0 &&
+                           operadores.Peek() != "(" &&
+                           ObtenerPrecedencia(operadores.Peek()) >= ObtenerPrecedencia(token))
+                        AplicarOperador(operandos, operadores);
+
+                    operadores.Push(token);
+                }
+                else
+                {
+                    operandos.Push(new NodoArbol(token));
+                }
+            }
+
+            while (operadores.Count > 0)
+                AplicarOperador(operandos, operadores);
+
+            return operandos.Count > 0 ? operandos.Pop() : null;
+        }
+
+        private double EvaluarArbol(NodoArbol nodo)
+        {
+            if (nodo == null) throw new Exception("Nodo nulo");
+
+            // Es un número
+            if (double.TryParse(nodo.Valor, out double num))
+                return num;
+
+            // Es una variable con valor conocido
+            if (valoresVariables.ContainsKey(nodo.Valor))
+                return valoresVariables[nodo.Valor];
+
+            // Es un operador
+            double izq = EvaluarArbol(nodo.Izquierdo);
+            double der = EvaluarArbol(nodo.Derecho);
+
+            switch (nodo.Valor)
+            {
+                case "+": return izq + der;
+                case "-": return izq - der;
+                case "*": return izq * der;
+                case "/":
+                    if (der == 0) throw new DivideByZeroException();
+                    return izq / der;
+                default: throw new Exception("Operador desconocido");
+            }
+        }
+        private void AplicarOperador(Stack<NodoArbol> operandos, Stack<string> operadores)
+        {
+            if (operandos.Count < 2 || operadores.Count == 0) return;
+
+            string op = operadores.Pop();
+            NodoArbol derecho = operandos.Pop();
+            NodoArbol izquierdo = operandos.Pop();
+
+            NodoArbol nodo = new NodoArbol(op);
+            nodo.Izquierdo = izquierdo;
+            nodo.Derecho = derecho;
+
+            operandos.Push(nodo);
+        }
+
+        private void MostrarArbol(NodoArbol nodo, string prefijo, bool esIzquierdo)
+        {
+            if (nodo == null) return;
+
+            Rtbx_salida.AppendText(prefijo + (esIzquierdo ? "├── " : "└── ") + nodo.Valor + "\n");
+
+            string nuevoPrefijo = prefijo + (esIzquierdo ? "│   " : "    ");
+            MostrarArbol(nodo.Izquierdo, nuevoPrefijo, true);
+            MostrarArbol(nodo.Derecho, nuevoPrefijo, false);
+        }
+
+
+
         //  BOTÓN ANALIZAR
         private void analizarToolStripMenuItem_Click(object sender, EventArgs e)
         {
             reporteFinal.Clear();
+            Rtbx_salida.Clear();
             tablaSimbolos.Clear();
             ambitoActual = "Global";
             erroresSintacticos = 0;
@@ -723,6 +1119,8 @@ namespace Prac1
 
                 // Detectar entrada a estructuras
                 ActualizarEstadoEstructura(lineaTrim);
+                AnalizarExpresion(lineaTrim, numLinea);
+
 
                 // Verifica parentesis sin cerrar en funcion
                 VerificarParentesisFuncion(lineaTrim, numLinea);
@@ -787,8 +1185,6 @@ namespace Prac1
             string total = $"\nTotal de errores sintácticos y léxicos: {erroresSintacticos}";
             Rtbx_salida.AppendText(total);
             reporteFinal.AppendLine(total);
-
-            Rtbx_salida.Text = reporteFinal.ToString();
 
             ExportarTablaCSV();
         }

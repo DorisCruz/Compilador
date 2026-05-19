@@ -1,9 +1,5 @@
 Nombre,Tipo,Origen
-a,int,suma
-b,int,suma
-c,int,suma
-resultado,int,suma
-x,float,promedio
-y,float,promedio
-z,float,promedio
-total,float,promedio
+a,int,calcular
+b,float,calcular
+d,int,calcular
+x,int,calcular
